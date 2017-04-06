@@ -1,0 +1,732 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mysql,性能优化," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="MySQL凭借着出色的性能、低廉的成本、丰富的资源，已经成为绝大多数互联网公司的首选关系型数据库。虽然性能出色，但是在工作还是会经常遇到查询过慢等问题，本文主要描述mysql慢查询的优化思路，主要从定位慢查询、分析慢查询以及优化慢查询的思路讲解。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql慢查询优化思路">
+<meta property="og:url" content="http://yoursite.com/2017/03/05/mysql慢查询优化思路/index.html">
+<meta property="og:site_name" content="Share">
+<meta property="og:description" content="MySQL凭借着出色的性能、低廉的成本、丰富的资源，已经成为绝大多数互联网公司的首选关系型数据库。虽然性能出色，但是在工作还是会经常遇到查询过慢等问题，本文主要描述mysql慢查询的优化思路，主要从定位慢查询、分析慢查询以及优化慢查询的思路讲解。">
+<meta property="og:updated_time" content="2017-04-03T10:54:19.018Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql慢查询优化思路">
+<meta name="twitter:description" content="MySQL凭借着出色的性能、低廉的成本、丰富的资源，已经成为绝大多数互联网公司的首选关系型数据库。虽然性能出色，但是在工作还是会经常遇到查询过慢等问题，本文主要描述mysql慢查询的优化思路，主要从定位慢查询、分析慢查询以及优化慢查询的思路讲解。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/05/mysql慢查询优化思路/"/>
+
+
+
+
+
+  <title> mysql慢查询优化思路 | Share </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Share</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Share Tech, Share Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Startseite
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archiv
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/05/mysql慢查询优化思路/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Share">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                mysql慢查询优化思路
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">admin</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-05T09:58:22+08:00">
+                2017-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>MySQL凭借着出色的性能、低廉的成本、丰富的资源，已经成为绝大多数互联网公司的首选关系型数据库。虽然性能出色，但是在工作还是会经常遇到查询过慢等问题，本文主要描述mysql慢查询的优化思路，主要从定位慢查询、分析慢查询以及优化慢查询的思路讲解。<br><a id="more"></a></p>
+<p>MySQL凭借着出色的性能、低廉的成本、丰富的资源，已经成为绝大多数互联网公司的首选关系型数据库。虽然性能出色，但是在工作还是会经常遇到查询过慢等问题，本文主要描述mysql慢查询的优化思路，主要从定位慢查询、分析慢查询以及优化慢查询的思路讲解。</p>
+<h3 id="1-定位慢查询"><a href="#1-定位慢查询" class="headerlink" title="1 定位慢查询"></a>1 定位慢查询</h3><p>我们要对sql语句进行优化，第一步肯定是找到执行速度较慢的语句，那么怎么在一个项目里面定位这些执行速度较慢的sql语句呢？下面就介绍一种定位慢查询的方法。 </p>
+<h4 id="1-1-数据库准备"><a href="#1-1-数据库准备" class="headerlink" title="1.1 数据库准备"></a>1.1 数据库准备</h4><p>首先创建一个数据库表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">CREATE TABLE emp</div><div class="line">(empno  MEDIUMINT UNSIGNED  NOT NULL  DEFAULT 0 COMMENT &apos;编号&apos;,</div><div class="line">ename VARCHAR(20) NOT NULL DEFAULT &quot;&quot; COMMENT &apos;名字&apos;,</div><div class="line">job VARCHAR(9) NOT NULL DEFAULT &quot;&quot; COMMENT &apos;工作&apos;,</div><div class="line">mgr MEDIUMINT UNSIGNED NOT NULL DEFAULT 0 COMMENT &apos;上级编号&apos;,</div><div class="line">hiredate DATE NOT NULL COMMENT &apos;入职时间&apos;,</div><div class="line">sal DECIMAL(7,2)  NOT NULL COMMENT &apos;薪水&apos;,</div><div class="line">comm DECIMAL(7,2) NOT NULL COMMENT &apos;红利&apos;,</div><div class="line">deptno MEDIUMINT UNSIGNED NOT NULL DEFAULT 0 COMMENT &apos;部门编号&apos;</div><div class="line">)ENGINE=InnoDB DEFAULT CHARSET=utf8;</div></pre></td></tr></table></figure>
+<p>然后我们构建一个存储函数，这个存储函数会返回一个长度为参数n的随机字符串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">delimiter $$</div><div class="line"> </div><div class="line">create function rand_string(n INT)</div><div class="line">returns varchar(255) #该函数会返回一个字符串</div><div class="line">begin</div><div class="line">    declare chars_str varchar(100) default &apos;abcdefghijklmnopqrstuvwxyzABCDEFJHIJKLMNOPQRSTUVWXYZ&apos;;</div><div class="line">    declare return_str varchar(255) default &apos;&apos;;</div><div class="line">    declare i int default 0;</div><div class="line">    while i &lt; n do</div><div class="line">        set return_str =concat(return_str,substring(chars_str,floor(1+rand()*52),1));</div><div class="line">        set i = i + 1;</div><div class="line">    end while;</div><div class="line">    return return_str;</div><div class="line">end $$</div><div class="line"> </div><div class="line">delimiter ;</div></pre></td></tr></table></figure>
+<p>接下来我们再创建一个存储函数，该存储函数会返回一个随机int值：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">delimiter $$</div><div class="line"> </div><div class="line">create function rand_num( )</div><div class="line">returns int(5)</div><div class="line">begin</div><div class="line"> declare i int default 0;</div><div class="line"> set i = floor(10+rand()*500);</div><div class="line">return i;</div><div class="line">  end $$</div><div class="line"> </div><div class="line">delimiter ;</div></pre></td></tr></table></figure>
+<p>然后我们利用刚刚创建的两个存储函数创建一个存储过程，该存储过程包含一个参数，该参数表示插入数据表emp的数据条数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">delimiter $$</div><div class="line"> </div><div class="line">create procedure insert_emp(in max_num int(10))</div><div class="line">begin</div><div class="line">declare i int default 0;</div><div class="line"> set autocommit = 0; </div><div class="line"> repeat</div><div class="line"> set i = i + 1;</div><div class="line"> insert into emp values (i ,rand_string(6),&apos;SALESMAN&apos;,0001,curdate(),2000,400,rand_num());</div><div class="line">  until i = max_num</div><div class="line"> end repeat;</div><div class="line">   commit;</div><div class="line"> end $$</div><div class="line"> </div><div class="line">delimiter ;</div></pre></td></tr></table></figure>
+<p>最后，我们调用改改创建的存储过程，对emp表插入1000w条数据：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">call insert_emp(10000000);</div></pre></td></tr></table></figure>
+<h4 id="1-2-查看慢查询"><a href="#1-2-查看慢查询" class="headerlink" title="1.2 查看慢查询"></a>1.2 查看慢查询</h4><p>我们可以用以下命令查看慢查询次数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">show status like &apos;slow_queries&apos;;</div></pre></td></tr></table></figure>
+<p>现在在mysql中敲入该命令，可以看到value为1，这个慢查询就是由刚刚批量插入1000w条数据产生。</p>
+<p>使用该命令只能查看慢查询次数，但是我们没有办法知道是哪些查询产生了慢查询，如果想要知道是哪些查询导致的慢查询，那么我们必须修改mysql的配置文件。打开mysql的配置文件（windows系统是my.ini,linux系统是my.cnf），在[mysqld]下面加上以下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">log-slow-queries=mysql_slow.log</div><div class="line">long_query_time=1</div></pre></td></tr></table></figure>
+<p>此时我们在mysql中运行以下命令，可以看到slow_query_log是ON状态，log_file也是我们指定的文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">mysql&gt; show variables like &apos;slow_query%&apos;; </div><div class="line">+---------------------+------------------------------+</div><div class="line">| Variable_name       | Value                        |</div><div class="line">+---------------------+------------------------------+</div><div class="line">| slow_query_log      | ON                           |</div><div class="line">| slow_query_log_file | mysql_slow.log |</div><div class="line">+---------------------+------------------------------+</div><div class="line">2 rows in set (0.00 sec)</div></pre></td></tr></table></figure>
+<p>运行以下命令我们可以看到我们设定的慢查询时间也生效了，此时只要查询时间大于1s，查询语句都将存入日志文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">mysql&gt; show variables like &apos;long_query_time&apos;; </div><div class="line">+-----------------+----------+</div><div class="line">| Variable_name   | Value    |</div><div class="line">+-----------------+----------+</div><div class="line">| long_query_time | 1.000000 |</div><div class="line">+-----------------+----------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure>
+<p>现在我们运行一个查询时间超过1s的查询语句：　　</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">mysql&gt; select * from emp where empno=413345;</div><div class="line">+--------+--------+----------+-----+------------+---------+--------+--------+</div><div class="line">| empno  | ename  | job      | mgr | hiredate   | sal     | comm   | deptno |</div><div class="line">+--------+--------+----------+-----+------------+---------+--------+--------+</div><div class="line">| 413345 | vvOHUB | SALESMAN |   1 | 2014-10-26 | 2000.00 | 400.00 |     11 |</div><div class="line">+--------+--------+----------+-----+------------+---------+--------+--------+</div><div class="line">1 row in set (6.55 sec)</div></pre></td></tr></table></figure>
+<p>然后查看mysql安装目录下的data目录，该目录会产生一个慢查询日志文件：mysql_slow.log，该文件内容如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">/usr/local/mysql/bin/mysqld, Version: 5.1.73-log (MySQL Community Server (GPL)). started with:</div><div class="line">Tcp port: 3306  Unix socket: /tmp/mysql.sock</div><div class="line">Time                 Id Command    Argument</div><div class="line"># Time: 141026 23:24:08</div><div class="line"># User@Host: root[root] @ localhost []</div><div class="line"># Query_time: 6.547536  Lock_time: 0.002936 Rows_sent: 1  Rows_examined: 10000000</div><div class="line">use temp;</div><div class="line">SET timestamp=1414337048;</div><div class="line">select * from emp where empno=413345;</div></pre></td></tr></table></figure>
+<p>在该日志文件中，我们可以知道慢查询产生的时间，最终产生了几行结果，测试了几行结果，以及运行语句是什么。在这里我们可以看到，这条语句产生一个结果，但是检测了1000w行记录，是一个全表扫描。</p>
+<h3 id="2-分析慢查询"><a href="#2-分析慢查询" class="headerlink" title="2 分析慢查询"></a>2 分析慢查询</h3><h4 id="2-1-Explain执行计划"><a href="#2-1-Explain执行计划" class="headerlink" title="2.1 Explain执行计划"></a>2.1 Explain执行计划</h4><p>慢查询日志可以帮助我们把所有查询时间过长的sql语句记录下来，在优化这些语句之前，我们应该使用explain命令查看mysql的执行计划，寻找其中的可优化点。</p>
+<p>explain命令的使用十分简单，只需要”explain + sql语句”即可，如下命令就是对我们刚刚的慢查询语句使用explain之后的结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">mysql&gt; explain select * from emp where empno=413345\G;</div><div class="line">*************************** 1. row ***************************</div><div class="line">           id: 1</div><div class="line">  select_type: SIMPLE</div><div class="line">        table: emp</div><div class="line">         type: ALL</div><div class="line">possible_keys: NULL</div><div class="line">          key: NULL</div><div class="line">      key_len: NULL</div><div class="line">          ref: NULL</div><div class="line">         rows: 10000351</div><div class="line">        Extra: Using where</div><div class="line">1 row in set (0.00 sec)</div><div class="line"> </div><div class="line">ERROR:</div><div class="line">No query specified</div></pre></td></tr></table></figure>
+<p>可以看到，explain命令的结果一共有以下几列：id, select_type, table, type, possible_keys, key, key_len, ref, rows, Extra，这些列分别代表以下意思：</p>
+<ol>
+<li>id：SELECT识别符。这是SELECT的查询序列号；</li>
+<li>select_type：查询类型，主要有PRIMARY(子查询中最外层查询）、SUBQUERY（子查询内层第一个SELECT）、UNION（UNION语句中第二个SELECT开始后面所有SELECT）、SIMPLE（除了子查询或者union之外的其他查询）；</li>
+<li>table：所访问的数据库表明；</li>
+<li>type：对表的访问方式，包括以下类型all(全表扫描)，index（全索引扫描），rang（索引范围扫描），ref（join语句中被驱动表索引引用查询），eq_ref（通过主键或唯一索引访问，最多只会有一条结果），const（读常量，只需读一次），system（系统表。表中只有一条数据），null（速度最快）。</li>
+<li>possible_keys：查询可能使用到的索引；</li>
+<li>key：最后选用的索引；</li>
+<li>key_len：使用索引的最大长度；</li>
+<li>ref：列出某个表的某个字段过滤；</li>
+<li>rows：估算出的结果行数；</li>
+<li>extra：查询细节信息，可能是以下值：distinct、using filesort（order by操作）、using index（所查数据只需要在index中即可获取）、using temporary（使用临时表）、using where（如果包含where，且不是仅通过索引即可获取内容，就会包含此信息）。</li>
+</ol>
+<p>这样，通过”explain select * from emp where empno=413345\G”命令的输出，我们就可以清楚的看到，这条查询语句是一个全表扫描语句，查询时没有用到任何索引，所以它的查询时间肯定会很慢。</p>
+<h4 id="2-2-Profiling-的使用"><a href="#2-2-Profiling-的使用" class="headerlink" title="2.2 Profiling 的使用"></a>2.2 Profiling 的使用</h4><p>mysql除了提供explain命令用于查看命令执行计划外，还提供了profiling工具用于查看语句查询过程中的资源消耗情况。首先我们要使用以下命令开启Profiling功能：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">set profiling = 1;</div></pre></td></tr></table></figure></p>
+<p>在开启了Query Profiler功能之后,MySQL就会自动记录所有执行的Query的profile信息了。 然后我们通过以下命令获取系统中保存的所有 Query 的 profile 概要信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">mysql&gt; show profiles;</div><div class="line">+----------+------------+--------------------------------------+</div><div class="line">| Query_ID | Duration   | Query                                |</div><div class="line">+----------+------------+--------------------------------------+</div><div class="line">|        1 | 0.00053000 | show tables                          |</div><div class="line">|        2 | 0.07412700 | select * from dept                   |</div><div class="line">|        3 | 0.06743300 | select * from salgrade               |</div><div class="line">|        4 | 6.44056000 | select * from emp where empno=413345 |</div><div class="line">+----------+------------+--------------------------------------+</div><div class="line">4 rows in set (0.00 sec)</div></pre></td></tr></table></figure>
+<p>然后我们可以通过以下命令查看具体的某一次查询的profile信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">mysql&gt; show profile cpu, block io for query 4;</div><div class="line">+--------------------+----------+----------+------------+--------------+---------------+</div><div class="line">| Status             | Duration | CPU_user | CPU_system | Block_ops_in | Block_ops_out |</div><div class="line">+--------------------+----------+----------+------------+--------------+---------------+</div><div class="line">| starting           | 0.000107 | 0.000072 |   0.000025 |            0 |             0 |</div><div class="line">| Opening tables     | 0.000021 | 0.000018 |   0.000003 |            0 |             0 |</div><div class="line">| System lock        | 0.000006 | 0.000004 |   0.000001 |            0 |             0 |</div><div class="line">| Table lock         | 0.000009 | 0.000008 |   0.000001 |            0 |             0 |</div><div class="line">| init               | 0.000034 | 0.000033 |   0.000002 |            0 |             0 |</div><div class="line">| optimizing         | 0.000012 | 0.000011 |   0.000001 |            0 |             0 |</div><div class="line">| statistics         | 0.000014 | 0.000012 |   0.000001 |            0 |             0 |</div><div class="line">| preparing          | 0.000013 | 0.000012 |   0.000002 |            0 |             0 |</div><div class="line">| executing          | 0.000005 | 0.000005 |   0.000016 |            0 |             0 |</div><div class="line">| Sending data       | 6.440260 | 7.818553 |   0.178155 |            0 |             0 |</div><div class="line">| end                | 0.000008 | 0.000006 |   0.000011 |            0 |             0 |</div><div class="line">| query end          | 0.000002 | 0.000002 |   0.000003 |            0 |             0 |</div><div class="line">| freeing items      | 0.000030 | 0.000013 |   0.000017 |            0 |             0 |</div><div class="line">| logging slow query | 0.000001 | 0.000000 |   0.000001 |            0 |             0 |</div><div class="line">| logging slow query | 0.000035 | 0.000020 |   0.000015 |            0 |             0 |</div><div class="line">| cleaning up        | 0.000003 | 0.000003 |   0.000000 |            0 |             0 |</div><div class="line">+--------------------+----------+----------+------------+--------------+---------------+</div><div class="line">16 rows in set (0.00 sec)</div></pre></td></tr></table></figure>
+<p>该profile显示了每一步操作的耗时以及cpu和Block IO的消耗，这样我们就可以更有针对性的优化查询语句了。可以看到，由于这是一次全表扫描，这里耗时最大是在sending data上。除了这种情况，以下几种情况也可能耗费大量时间：converting HEAP to MyISAM(查询结果太大时,把结果放在磁盘)、create tmp table(创建临时表,如group时储存中间结果)、Copying to tmp table on disk(把内存临时表复制到磁盘)、locked(被其他查询锁住) 、logging slow query(记录慢查询)。</p>
+<h3 id="3-优化慢查询"><a href="#3-优化慢查询" class="headerlink" title="3. 优化慢查询"></a>3. 优化慢查询</h3><p>优化慢查询的方法有很多，其中最简单的是添加索引，复杂点的如分库分表，以及将大字段移出等手段由于倾入性太大，此处不做设计，本部分主要讲解一些索引的常见操作</p>
+<h4 id="3-1-索引的添加"><a href="#3-1-索引的添加" class="headerlink" title="3.1 索引的添加"></a>3.1 索引的添加</h4><p>mysql一共有四类索引，分别是主键索引、唯一索引、普通索引以及全文索引。</p>
+<h5 id="3-1-1-主键索引的添加"><a href="#3-1-1-主键索引的添加" class="headerlink" title="3.1.1 主键索引的添加"></a>3.1.1 主键索引的添加</h5><p>创建一张表时，把某个列设为主键的时候，则该列就是主键索引。添加主键索引有两种方法，我们可以在建表的时候指定主键，这样就可以在建表时添加索引；我们也可以在建表以后添加主键索引，下面的table1的主键索引是在建表时创建，table2是在建表后添加的主键索引：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">create table table1(</div><div class="line">    id int unsigned primary key auto_increment ,</div><div class="line">    name varchar(32) not null</div><div class="line">);</div><div class="line"> </div><div class="line">//添加主键索引语法：alter table 表名 add primary key (列名);</div><div class="line">create table table2(</div><div class="line">    id int unsigned,</div><div class="line">    name varchar(32) not null</div><div class="line">);</div><div class="line"> </div><div class="line">alter table table2 add primary key (id);</div></pre></td></tr></table></figure>
+<h5 id="3-1-2-唯一索引的添加"><a href="#3-1-2-唯一索引的添加" class="headerlink" title="3.1.2 唯一索引的添加"></a>3.1.2 唯一索引的添加</h5><p>当表的某列被指定为unique约束时，这列就是一个唯一索引。同样，唯一索引的添加也可以分创建时添加和创建后添加，下例中table3的唯一索引是创建时添加，table4的唯一索引是创建后添加的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">create table table3(</div><div class="line">    id int unsigned primary key auto_increment ,</div><div class="line">    name varchar(32) unique</div><div class="line">);</div><div class="line"> </div><div class="line">//添加唯一索引语法：create unique index 索引名  on 表名 (列表..);</div><div class="line">create table table4(</div><div class="line">    id int unsigned primary key auto_increment ,</div><div class="line">    name varchar(32)</div><div class="line">);</div><div class="line"> </div><div class="line">create unique index my_uni on table4(name);</div><div class="line">```    </div><div class="line"></div><div class="line">##### 3.1.3 普通索引的添加</div><div class="line"></div><div class="line">普通索引应该是mysql中最常用的索引，因为一张表只能有一个主键索引，数量较少，唯一索引又必须保证内容唯一，限制较多，所以在mysql中最常用的还是普通索引。普通索引的创建也可以分建表时创建和建表后创建，下面例子中table5的普通索引是建表时创建，table6是的普通索引是建表后创建的：</div></pre></td></tr></table></figure>
+<p>create table table5(<br>    id int unsigned,<br>    name varchar(32),<br>    KEY KEY_ID_NAME(id, name)<br>);</p>
+<p>//添加普通索引语法：create index 索引名 on 表 (列1,列名2);<br>create table table6(<br>    id int unsigned,<br>    name varchar(32)<br>);</p>
+<p>create index KEY_ID_NAME on table6 (id, name);<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">##### 3.1.4 全文索引</div><div class="line"></div><div class="line">全文索引主要是针对文本或者文件的搜索，在这里就不再举例介绍了。</div><div class="line"></div><div class="line">#### 3.2 索引的查询</div><div class="line"></div><div class="line">索引的查询很简单，可以使用以下两条命令显示表上的索引：</div></pre></td></tr></table></figure></p>
+<p>show index from 表名<br> 或<br>show keys from 表名<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">以table5为例，我们可以看看怎么查询索引：</div></pre></td></tr></table></figure></p>
+<p>mysql&gt; show index from table5\G;<br><strong><strong><strong><strong><strong><strong><em>*</em></strong></strong></strong></strong></strong></strong> 1. row <strong><strong><strong><strong><strong><strong><em>*</em></strong></strong></strong></strong></strong></strong><br>       Table: table5<br>  Non_unique: 1<br>    Key_name: KEY_ID_NAME<br>Seq_in_index: 1<br> Column_name: id<br>   Collation: A<br> Cardinality: NULL<br>    Sub_part: NULL<br>      Packed: NULL<br>        Null: YES<br>  Index_type: BTREE<br>     Comment:<br><strong><strong><strong><strong><strong><strong><em>*</em></strong></strong></strong></strong></strong></strong> 2. row <strong><strong><strong><strong><strong><strong><em>*</em></strong></strong></strong></strong></strong></strong><br>       Table: table5<br>  Non_unique: 1<br>    Key_name: KEY_ID_NAME<br>Seq_in_index: 2<br> Column_name: name<br>   Collation: A<br> Cardinality: NULL<br>    Sub_part: NULL<br>      Packed: NULL<br>        Null: YES<br>  Index_type: BTREE<br>     Comment:<br>2 rows in set (0.00 sec)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">从查询结果可以看出，索引类型是B树，两列结果的Key_name一样，说明是复合索引等等信息。不过这样看很累，在平时查看索引时，我喜欢使用&apos;show create table&apos;命令查看表上的索引：</div></pre></td></tr></table></figure></p>
+<p>mysql&gt; show create table table5\G;<br><strong><strong><strong><strong><strong><strong><em>*</em></strong></strong></strong></strong></strong></strong> 1. row <strong><strong><strong><strong><strong><strong><em>*</em></strong></strong></strong></strong></strong></strong><br>       Table: table5<br>Create Table: CREATE TABLE <code>table5</code> (<br>  <code>id</code> int(10) unsigned DEFAULT NULL,<br>  <code>name</code> varchar(32) DEFAULT NULL,<br>  KEY <code>KEY_ID_NAME</code> (<code>id</code>,<code>name</code>)<br>) ENGINE=MyISAM DEFAULT CHARSET=latin1<br>1 row in set (0.00 sec)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">这样看结果就清晰多了，&apos;KEY KEY_ID_NAME(id, name)&apos;直接把索引名称，索引作用列以及索引类型都显示出来了，清晰明了。</div><div class="line"></div><div class="line">#### 3.3 索引的删除   </div><div class="line"></div><div class="line">可以使用以下命令删除索引：alter table 表名 drop index 索引名; 例如我们想删除table5上的KEY_ID_NAME索引只需使用以下命令即可：</div></pre></td></tr></table></figure></p>
+<p>alter table table5 drop index KEY_ID_NAME;<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">比较特殊的是删除主键索引，删除主键索引的语法如下：alter table tablename drop primary key; 例如我们要删除table2上的主键索引可以使用以下命令：</div></pre></td></tr></table></figure></p>
+<p>alter table table2 drop primary key;<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">#### 3.4 索引的利弊    </div><div class="line"></div><div class="line">索引为我们带来的好处主要有以下两点：1、缩小检索范围，加快检索速度；2、在索引上排序及group by资源消耗极低。</div><div class="line"></div><div class="line">同时，大量使用索引也会给我们带来以下弊端：1、增删改操作将比原来更加耗时；2、索引的存储会占用存储空间。</div><div class="line"></div><div class="line">当要为表创建索引时，我们可以从以下几个方面考虑是否应该创建索引：</div><div class="line"></div><div class="line">1. 较频繁的作为查询条件的字段应该创建索引；</div><div class="line">2. 唯一性太差的字段不适合单独创建索引,即使频繁作为查询条件; </div><div class="line">3. 更新非常频繁的字段不适合创建索引，因为添加索引后字段更新将更加耗时;</div><div class="line"></div><div class="line">#### 3.5 使用索引的注意项     </div><div class="line"></div><div class="line">1. 对于创建的多列索引，只要查询条件使用了最左边的列，索引一般就会被使用。例如在a,b,c列上创建索引，那么查询条件&quot;a=5&quot;,&quot;a=5 and b=6&quot;,&quot;a=7 and b=8 and c=6&quot;都会使用该索引；</div><div class="line">2. 对于使用like的查询，查询如果是‘%aaa’不会使用到索引‘aaa%’会使用到索引；</div><div class="line">3. 如果条件中有or，那么除非or条件都带有索引，否则还是会全表扫描；</div><div class="line">4. 如果列类型是字符串，那一定要在条件中将数据使用引号引用起来，否则不使用索引；</div><div class="line">5. 如果字符串较长时，直接使用&apos;create index KEY_NAME on table6 (name)&apos; 命令创建的索引也将较长，浪费磁盘空间；这时候我们可以通过&apos;create index KEY_NAME on table6 (name(4))&apos; 命令限定索引长度；</div><div class="line">6. 连接查询时，在连接键上增加索引可以加快速度，同时遵循小表驱动大表原则；</div><div class="line">7. 如果mysql估计使用全表扫描要比使用索引快，则不使用索引。</div><div class="line"></div><div class="line">#### 3.6 直观感受索引的威力 </div><div class="line"></div><div class="line">上一部分中我们创建了一张包含1000w数据的数据表，在该表上我们没有加任何索引，然后查询一条数据话费了6.5s时间。这次我们为它加上索引，然后查询数据，看一下索引优化的效果。</div><div class="line"></div><div class="line">添加索引：</div></pre></td></tr></table></figure></p>
+<p>create index KEY_NO on emp (empno);<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">调用和上文一模一样的查询语句，看这次查询需要多长时间：</div></pre></td></tr></table></figure></p>
+<p>mysql&gt; select * from emp where empno=413345;<br>+——–+——–+———-+—–+————+———+——–+——–+<br>| empno  | ename  | job      | mgr | hiredate   | sal     | comm   | deptno |<br>+——–+——–+———-+—–+————+———+——–+——–+<br>| 413345 | JpugvK | SALESMAN |   1 | 2014-10-27 | 2000.00 | 400.00 |    157 |<br>+——–+——–+———-+—–+————+———+——–+——–+<br>1 row in set (0.10 sec)<br>```</p>
+<p>查询时间从原来的6.5s提升到了0.1s，提高了65倍。关于MySQL索引原理可以看这篇文章： <a href="http://tech.meituan.com/mysql-index.html" target="_blank" rel="external">MySQL索引原理及慢查询优化</a>。</p>
+<h3 id="4-好文推荐"><a href="#4-好文推荐" class="headerlink" title="4 好文推荐"></a>4 好文推荐</h3><ol>
+<li><a href="http://blog.jobbole.com/100349/" target="_blank" rel="external">如果有人问你数据库的原理，叫他看这篇文章</a></li>
+<li><a href="http://blog.codinglabs.org/articles/theory-of-mysql-index.html" target="_blank" rel="external">MySQL索引背后的数据结构及算法原理</a> </li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+            <a href="/tags/性能优化/" rel="tag"># 性能优化</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/05/ZooKeeper原理及使用/" rel="next" title="ZooKeeper原理及使用">
+                <i class="fa fa-chevron-left"></i> ZooKeeper原理及使用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/03/Innodb中的事务隔离级别和锁的关系/" rel="prev" title="Innodb中的事务隔离级别和锁的关系">
+                Innodb中的事务隔离级别和锁的关系 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">Artikel</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">Tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-定位慢查询"><span class="nav-number">1.</span> <span class="nav-text">1 定位慢查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-数据库准备"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 数据库准备</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-查看慢查询"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 查看慢查询</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-分析慢查询"><span class="nav-number">2.</span> <span class="nav-text">2 分析慢查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-Explain执行计划"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 Explain执行计划</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-Profiling-的使用"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Profiling 的使用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-优化慢查询"><span class="nav-number">3.</span> <span class="nav-text">3. 优化慢查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-索引的添加"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 索引的添加</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-1-主键索引的添加"><span class="nav-number">3.1.1.</span> <span class="nav-text">3.1.1 主键索引的添加</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-2-唯一索引的添加"><span class="nav-number">3.1.2.</span> <span class="nav-text">3.1.2 唯一索引的添加</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-好文推荐"><span class="nav-number">4.</span> <span class="nav-text">4 好文推荐</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+</div>
+
+
+<div class="powered-by">
+  Erstellt mit  <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

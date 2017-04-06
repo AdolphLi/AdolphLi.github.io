@@ -1,0 +1,693 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="netty," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="Netty是一个高性能、异步事件驱动的NIO框架，它提供了对TCP、UDP和文件传输的支持，它具有性能高、架构优秀、支持协议多等优点。Netty已经成为Java网络开发的首选NIO框架，本文将基于Netty设计和实现一个自己的网络框架——netty-wrapper。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于Netty实现自己的网络框架">
+<meta property="og:url" content="http://yoursite.com/2017/03/01/基于Netty实现自己的网络框架/index.html">
+<meta property="og:site_name" content="Share">
+<meta property="og:description" content="Netty是一个高性能、异步事件驱动的NIO框架，它提供了对TCP、UDP和文件传输的支持，它具有性能高、架构优秀、支持协议多等优点。Netty已经成为Java网络开发的首选NIO框架，本文将基于Netty设计和实现一个自己的网络框架——netty-wrapper。">
+<meta property="og:updated_time" content="2017-03-05T03:14:07.577Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于Netty实现自己的网络框架">
+<meta name="twitter:description" content="Netty是一个高性能、异步事件驱动的NIO框架，它提供了对TCP、UDP和文件传输的支持，它具有性能高、架构优秀、支持协议多等优点。Netty已经成为Java网络开发的首选NIO框架，本文将基于Netty设计和实现一个自己的网络框架——netty-wrapper。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/01/基于Netty实现自己的网络框架/"/>
+
+
+
+
+
+  <title> 基于Netty实现自己的网络框架 | Share </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Share</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Share Tech, Share Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Startseite
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archiv
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/01/基于Netty实现自己的网络框架/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Share">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                基于Netty实现自己的网络框架
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">admin</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-01T22:59:41+08:00">
+                2017-03-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Netty是一个高性能、异步事件驱动的NIO框架，它提供了对TCP、UDP和文件传输的支持，它具有性能高、架构优秀、支持协议多等优点。<br>Netty已经成为Java网络开发的首选NIO框架，本文将基于Netty设计和实现一个自己的网络框架——netty-wrapper。<br><a id="more"></a></p>
+<h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h3><p>Netty是一个高性能、异步事件驱动的NIO框架，它提供了对TCP、UDP和文件传输的支持，它具有性能高、架构优秀、支持协议多等优点。<br>Netty已经成为Java网络开发的首选NIO框架，本文将基于Netty设计和实现一个自己的网络框架——netty-wrapper，基于netty-wrapper我们可以很简单地编写客户端和服务端交互的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line">/*********************************** Server 端代码 *****************************/</div><div class="line"></div><div class="line">// 1. 新建Server对象</div><div class="line">Server server = new DefaultServer(6666);</div><div class="line"></div><div class="line">// 2. 为Server对象注册处理器， 此处理器用于处理People对象</div><div class="line">server.registerRequestProcessor(new RequestProcessor&lt;People&gt;() &#123;</div><div class="line">    public void handleRequest(HandlerContext handlerContext, People request) &#123;</div><div class="line">        People people = new People();</div><div class="line">        people.setAge(request.getAge() * 2);</div><div class="line">        people.setName(PREFIX + request.getName());</div><div class="line">        try &#123;</div><div class="line">            Thread.sleep((long) (1000 * Math.random()));</div><div class="line">            handlerContext.sendResponse(people);</div><div class="line">        &#125; catch (Exception e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    @Override</div><div class="line">    public Executor getExecutor() &#123;</div><div class="line">        return executorService;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String interest() &#123;</div><div class="line">        return People.class.getName();</div><div class="line">    &#125;</div><div class="line">&#125;);</div><div class="line"></div><div class="line">// 3. 启动Server</div><div class="line">server.start();</div><div class="line"></div><div class="line">/***************************** Client 端代码 ******************************/</div><div class="line"></div><div class="line">// 1. 新建Client对象</div><div class="line">Client client = new DefaultCliet(&quot;127.0.0.1&quot;, 6666);</div><div class="line">// 2. 进行远端调用</div><div class="line">People result = (People) client.invokeSync(people, 2000);</div><div class="line">// 3. 处理结果</div><div class="line">...</div></pre></td></tr></table></figure></p>
+<p>使用netty-wrapper之后，服务端编码只需新建Server对象，注册处理器，立即启动即可，无需处理io.netty.bootstrap.ServerBootstrap、io.netty.channel.EventLoopGroup等繁琐对象。</p>
+<p>对于客户端就更简单了，只需要新建Client对象，然后直接调用invokeSync即可。</p>
+<p>多线程并发的测试用例可以看<a href="https://github.com/AdolphLi/netty-wrapper/blob/master/src/test/java/com/github/adolphli/netty/wrapper/ConcurrentTest.java" target="_blank" rel="external">ConcurrentTest类</a>，本文的接下部分将主要用于介绍整个网络框架的核心代码。</p>
+<p>熟悉Netty开发的都知道，Netty程序的核心是Handler，Handler组成的pipeline会对所有请求进行处理，所以本文将主要介绍Netty wrapper中的四个Handler：MessageEncoder、MessageDecoder、ProcessHandler以及ResponseHandler。</p>
+<h3 id="2-MessageEncoder与MessageDecoder"><a href="#2-MessageEncoder与MessageDecoder" class="headerlink" title="2. MessageEncoder与MessageDecoder"></a>2. MessageEncoder与MessageDecoder</h3><p>MessageEncoder与MessageDecoder 是用来对传输数据进行编解码的，实现MessageEncoder和MessageDecoder需要单个要素，分别是：</p>
+<ol>
+<li>设计传输对象Message；</li>
+<li>选择合适的序列化方式；</li>
+<li>实现编码和解</li>
+</ol>
+<h4 id="2-1-传输对象Message"><a href="#2-1-传输对象Message" class="headerlink" title="2.1 传输对象Message"></a>2.1 传输对象Message</h4><p>编写网络框架的第一步是设计一个用于传输的对象Message，每个Message包含包含三部分，分别是messageId、头部与主体部分，messageId用于将request和response进行绑定，头部用于将来扩展，主体部分用于存放数据内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">public class Message &#123;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 消息id</div><div class="line">     */</div><div class="line">    private int id;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 传输对象头部，用于扩展， 当前版本总为null</div><div class="line">     */</div><div class="line">    private byte[] header;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 传输对象主体</div><div class="line">     */</div><div class="line">    private byte[] body;</div><div class="line"></div><div class="line">	// getters and setters</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="2-2-序列化与工具类"><a href="#2-2-序列化与工具类" class="headerlink" title="2.2 序列化与工具类"></a>2.2 序列化与工具类</h4><p>上文的传输对象Message并不会直接面向用户，因为用户基本不会直接传输一个byte数组，这个没有意义，更常见的是我们需要传递一个对象，从对象到byte数组，这里面就牵扯到序列化。<br>jvm平台的序列化协议有很多，包括Java自带的、Hessian、protobuf以及kyro等，他们的目标都是实现把一个类与byte数组互相转换，在这里以Hessian为例，提供Hessian序列化工具类：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">public class HessianSerializer &#123;</div><div class="line"></div><div class="line">    private static final SerializerFactory serializerFactory = new SerializerFactory();</div><div class="line"></div><div class="line">    /** 对Object进行序列化 */</div><div class="line">    public static byte[] serialize(Object obj) throws IOException &#123;</div><div class="line">        ByteArrayOutputStream byteArray = new ByteArrayOutputStream();</div><div class="line">        Hessian2Output output = new Hessian2Output(byteArray);</div><div class="line">        output.setSerializerFactory(serializerFactory);</div><div class="line">        output.writeObject(obj);</div><div class="line">        output.close();</div><div class="line"></div><div class="line">        byte[] bytes = byteArray.toByteArray();</div><div class="line">        return bytes;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    /** 将byte数组反序列化成Object */</div><div class="line">    public static &lt;T&gt; T deserialize(byte[] data) throws IOException &#123;</div><div class="line">        Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));</div><div class="line">        input.setSerializerFactory(serializerFactory);</div><div class="line">        Object resultObject;</div><div class="line">        resultObject = input.readObject();</div><div class="line">        input.close();</div><div class="line">        return (T) resultObject;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>序列化工具类主要用于解决Object与byte数组的转换，但是这样还不够，除了这个序列化工具类，我们还需要一个MessageUtil工具类，这个工具类能够实现对象与Message的转换：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">public class MessageUtil &#123;</div><div class="line">    /**</div><div class="line">     * 将传输对象转换为Message对象</div><div class="line">     *</div><div class="line">     */</div><div class="line">    public static Message convertToMessage(int msgId, Object obj) throws IOException &#123;</div><div class="line">        return new Message(msgId, null, HessianSerializer.serialize(obj));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 从Message中得到传输对象</div><div class="line">     *</div><div class="line">     */</div><div class="line">    public static Object getTransferObject(Message message) throws IOException &#123;</div><div class="line">        return HessianSerializer.deserialize(message.getBody());</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="2-3-设计编码器和解码器"><a href="#2-3-设计编码器和解码器" class="headerlink" title="2.3 设计编码器和解码器"></a>2.3 设计编码器和解码器</h4><p>终于，到了最关键的设计编码器和解码器了。</p>
+<p>TCP是一个“流”协议，所谓流就是没有界限的一串数据，TCP底层并不了解上层业务数据的具体含义，它会根据TCP缓冲区的实际情况进行包的划分，所以在业务上认为，一个完整的包可能会被TCP拆分成多个包进行发送，也有可能把多个小的包封装成一个大的数据包发送，这就是所谓的TCP粘包和拆包问题。</p>
+<p>设计编码器和解码器时，首先需要考虑粘包和拆包问题，幸运的是Netty为我们提供了一个专门处理TCP协议数据的Handler：LengthFieldBasedFrameDecoder ，它的原理是server端和client约定一个协议格式：数据包=协议长度+协议体，实现原理可以参考<a href="http://www.cnblogs.com/yxwkf/p/4754950.html" target="_blank" rel="external">这里</a>。</p>
+<p>由于我们的传输对象包含id、header、body三部分，所以整个数据包的格式应该是：数据包=总长度(4字节) + msgId(4字节) + Header长度(4字节) + Header内容 + body内容，编码器继承自MessageToByteEncoder， 对应代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">public class MessageEncoder extends MessageToByteEncoder&lt;Message&gt; &#123;</div><div class="line"></div><div class="line">    protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception &#123;</div><div class="line"></div><div class="line">        out.writeInt(8 + msg.getHeaderLength() + msg.getBodyLength());</div><div class="line">        out.writeInt(msg.getId());</div><div class="line">        out.writeInt(msg.getHeaderLength());</div><div class="line">        if (msg.getHeader() != null) &#123;</div><div class="line">            out.writeBytes(msg.getHeader());</div><div class="line">        &#125;</div><div class="line">        if (msg.getBody() != null) &#123;</div><div class="line">            out.writeBytes(msg.getBody());</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>解码器继承自LengthFieldBasedFrameDecoder， 最大长度为16M，对应代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">public class MessageDecoder extends LengthFieldBasedFrameDecoder &#123;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 最大16MB</div><div class="line">     */</div><div class="line">    private static final int FRAME_MAX_LENGTH = 16 * 1024 * 1024;</div><div class="line"></div><div class="line">    public MessageDecoder() &#123;</div><div class="line">        super(FRAME_MAX_LENGTH, 0, 4, 0, 4);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    @Override</div><div class="line">    protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception &#123;</div><div class="line">        ByteBuf byteBuf = (ByteBuf) super.decode(ctx, in);</div><div class="line">        if (byteBuf == null) &#123;</div><div class="line">            return null;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        Object result = handleByteBuf(byteBuf);</div><div class="line">        byteBuf.release();</div><div class="line">        return result;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private Object handleByteBuf(ByteBuf byteBuf) &#123;</div><div class="line"></div><div class="line">        int length = byteBuf.readableBytes();</div><div class="line">        int msgId = byteBuf.readInt();</div><div class="line">        </div><div class="line">        int headerLength = byteBuf.readInt();</div><div class="line">        byte[] headerData = null;</div><div class="line">        if (headerLength &gt; 0) &#123;</div><div class="line">            headerData = new byte[headerLength];</div><div class="line">            byteBuf.readBytes(headerData);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        int bodyLength = length - 8 - headerLength;</div><div class="line">        byte[] bodyData = null;</div><div class="line">        if (bodyLength &gt; 0) &#123;</div><div class="line">            bodyData = new byte[bodyLength];</div><div class="line">            byteBuf.readBytes(bodyData);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        return new Message(msgId, headerData, bodyData);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="3-ProcessHandler实现"><a href="#3-ProcessHandler实现" class="headerlink" title="3. ProcessHandler实现"></a>3. ProcessHandler实现</h3><h4 id="3-1-RequestProcessor"><a href="#3-1-RequestProcessor" class="headerlink" title="3.1 RequestProcessor"></a>3.1 RequestProcessor</h4><p>现在我们已经能够把一个对象进行序列化之后进行传输了，传输之后也能够进行反序列化成原来对象，接下来就是要对这个对象进行处理了，处理的逻辑就在ProcessHandler中。</p>
+<p>在讲解ProcessHandler之前必须先说一下RequestProcessor接口。我们的目标是做一个网络框架，作为框架必须要可扩展，需要允许用户注册自己定义的处理器, 为了实现可扩展性，定义处理器接口如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">import java.util.concurrent.Executor;</div><div class="line"></div><div class="line">/**</div><div class="line"> * 用户处理器接口</div><div class="line"> * 如果传输对象的类名等于interest()方法返回值， 框架将在用户提供的线程池中调用handleRequest方法，</div><div class="line"> *</div><div class="line"> * @param &lt;T&gt;</div><div class="line"> */</div><div class="line">public interface RequestProcessor&lt;T&gt; &#123;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 对请求进行处理</div><div class="line">     */</div><div class="line">    void handleRequest(HandlerContext handlerContext, T request);</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 返回业务线程池</div><div class="line">     */</div><div class="line">    Executor getExecutor();</div><div class="line"></div><div class="line">    /**</div><div class="line">     * Processor处理的类名</div><div class="line">     */</div><div class="line">    String interest();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>一共包含三个方法，分别是对请求进行处理、返回业务线程池 以及 订阅类名。</p>
+<p>这里需要用户传入线程池的原因是避免在IO线程中进行业务处理，将业务操作放在用户提供的线程池中操作。</p>
+<p>这里还需要注意的是handleRequest的第一个参数HandlerContext，这是提供给用户进行返回值的接口，整个接口只有一个方法，那就是返回调用结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * 提供给RequestProcessor使用的HandlerContext， 用户可以直接使用此接口的sendResponse返回结果</div><div class="line"> */</div><div class="line">public interface HandlerContext &#123;</div><div class="line">    /**</div><div class="line">     * 返回调用结果</div><div class="line">     */</div><div class="line">    void sendResponse(Object response) throws Exception;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="3-2-ProcessHandler实现"><a href="#3-2-ProcessHandler实现" class="headerlink" title="3.2 ProcessHandler实现"></a>3.2 ProcessHandler实现</h4><p>现在可以看下ProcessHandler的实现了，ProcessHandler的工作很简单，主要是根据传输的对象，选择正确的RequestProcessor进行处理。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * 服务端处理器Handler</div><div class="line"> * 会根据传输对象选择正确的RequestProcessor进行处理</div><div class="line"> */</div><div class="line">public class ProcessHandler extends SimpleChannelInboundHandler&lt;Message&gt; &#123;</div><div class="line"></div><div class="line">    private final ConcurrentMap&lt;String, RequestProcessor&lt;?&gt;&gt; requestProcessors;</div><div class="line"></div><div class="line">    public ProcessHandler(ConcurrentMap&lt;String, RequestProcessor&lt;?&gt;&gt; requestProcessors) &#123;</div><div class="line">        this.requestProcessors = requestProcessors;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    @Override</div><div class="line">    protected void channelRead0(final ChannelHandlerContext ctx, final Message msg) throws Exception &#123;</div><div class="line">        final Object object = MessageUtil.getTransferObject(msg);</div><div class="line">        final RequestProcessor requestProcessor = requestProcessors.get(object.getClass().getName());</div><div class="line">        if (requestProcessor != null) &#123;</div><div class="line">            requestProcessor.getExecutor().execute(new Runnable() &#123;</div><div class="line">                @Override</div><div class="line">                public void run() &#123;</div><div class="line">                    requestProcessor.handleRequest(new DefaultHandlerContext(ctx, msg.getId()), object);</div><div class="line">                &#125;</div><div class="line">            &#125;);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="4-ResponseHandler实现"><a href="#4-ResponseHandler实现" class="headerlink" title="4. ResponseHandler实现"></a>4. ResponseHandler实现</h3><p>ResponseHandler的代码很简单, 获取正确的ResponseFuture，然后为其设置Response对象：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">public class ResponseHandler extends SimpleChannelInboundHandler&lt;Message&gt; &#123;</div><div class="line"></div><div class="line">    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception &#123;</div><div class="line">        ResponseFutureManager.get(msg.getId()).putResponse(msg);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>ResponseFuture表示一个等待客户端调用结果的Future对象，一共包含两个接口，分别是waitResponse、putResponse方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">public interface ResponseFuture &#123;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 等待调用结果， 最长等待timeout ms</div><div class="line">     *</div><div class="line">     * @param timeout</div><div class="line">     * @return</div><div class="line">     */</div><div class="line">    Message waitResponse(final long timeout) throws Exception;</div><div class="line"></div><div class="line">    /**</div><div class="line">     * 为Future对象设置调用结果</div><div class="line">     *</div><div class="line">     * @param message</div><div class="line">     */</div><div class="line">    void putResponse(Message message);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>在DefaultCliet的invokeSync方法中可以看到对waitResponse的调用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">public Object invokeSync(Object value, long timeout) throws Exception &#123;</div><div class="line">    int id = IDGenerator.nextId();</div><div class="line">    ResponseFuture responseFuture = new DefaultResponseFuture();</div><div class="line">    ResponseFutureManager.put(id, responseFuture);</div><div class="line"></div><div class="line">    channel.writeAndFlush(MessageUtil.convertToMessage(id, value));</div><div class="line"></div><div class="line">    Message message = responseFuture.waitResponse(timeout);</div><div class="line">    return  MessageUtil.getTransferObject(message);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>由于netty是异步的，我们在调用完channel.writeAndFlush()方法后无法同步得到调用结果，所以下一步就调用了responseFuture.waitResponse()方法，用于等待服务端结果返回。</p>
+<p>当服务端有数据返回是，就会触发我们的ResponseHandler，在ResponseHandler中我们根据MessageId选择正确的ResponseFuture插入返回结果，并唤醒waitResponse()方法。</p>
+<p>得到服务端传递的Message对象后，最后一步就是调用MessageUtil的getTransferObject得到传输的具体对象。</p>
+<h3 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h3><p>至此，4个Handler全部分析完毕，总的来说，MessageEncoder与MessageDecoder是用来编码和解码的，ProcessHandler用于选择正确的RequestProcessor对请求进行处理，ResponseHandler用于异步结果和Client调用进行绑定。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/netty/" rel="tag"># netty</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/04/分布式环境下的数据一致性问题/" rel="prev" title="分布式环境下的数据一致性问题">
+                分布式环境下的数据一致性问题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">Artikel</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">Tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-概述"><span class="nav-number">1.</span> <span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-MessageEncoder与MessageDecoder"><span class="nav-number">2.</span> <span class="nav-text">2. MessageEncoder与MessageDecoder</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-传输对象Message"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 传输对象Message</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-序列化与工具类"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 序列化与工具类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-设计编码器和解码器"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 设计编码器和解码器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-ProcessHandler实现"><span class="nav-number">3.</span> <span class="nav-text">3. ProcessHandler实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-RequestProcessor"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 RequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-ProcessHandler实现"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 ProcessHandler实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-ResponseHandler实现"><span class="nav-number">4.</span> <span class="nav-text">4. ResponseHandler实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-总结"><span class="nav-number">5.</span> <span class="nav-text">5. 总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+</div>
+
+
+<div class="powered-by">
+  Erstellt mit  <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

@@ -1,0 +1,739 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="分布式," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="在分布式系统中，系统一般由多个独立的服务组成，多个服务之间如何保证数据一致是一个复杂问题。
+具体业务场景如下，比如一个业务操作，如果同时调用服务 A、B、C，需要满足要么同时成功；要么同时失败。A、B、C 可能是多个不同部门开发、部署在不同服务器上的远程服务，那么如何保证他们的一致性呢？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式环境下的数据一致性问题">
+<meta property="og:url" content="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/index.html">
+<meta property="og:site_name" content="Share">
+<meta property="og:description" content="在分布式系统中，系统一般由多个独立的服务组成，多个服务之间如何保证数据一致是一个复杂问题。
+具体业务场景如下，比如一个业务操作，如果同时调用服务 A、B、C，需要满足要么同时成功；要么同时失败。A、B、C 可能是多个不同部门开发、部署在不同服务器上的远程服务，那么如何保证他们的一致性呢？">
+<meta property="og:image" content="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/消息中心.png">
+<meta property="og:image" content="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/TCC.jpg">
+<meta property="og:image" content="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/TCC-2.jpg">
+<meta property="og:updated_time" content="2017-03-04T02:59:12.458Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分布式环境下的数据一致性问题">
+<meta name="twitter:description" content="在分布式系统中，系统一般由多个独立的服务组成，多个服务之间如何保证数据一致是一个复杂问题。
+具体业务场景如下，比如一个业务操作，如果同时调用服务 A、B、C，需要满足要么同时成功；要么同时失败。A、B、C 可能是多个不同部门开发、部署在不同服务器上的远程服务，那么如何保证他们的一致性呢？">
+<meta name="twitter:image" content="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/消息中心.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/"/>
+
+
+
+
+
+  <title> 分布式环境下的数据一致性问题 | Share </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Share</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Share Tech, Share Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Startseite
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archiv
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/04/分布式环境下的数据一致性问题/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Share">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                分布式环境下的数据一致性问题
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">admin</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-04T10:41:50+08:00">
+                2017-03-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在分布式系统中，系统一般由多个独立的服务组成，多个服务之间如何保证数据一致是一个复杂问题。</p>
+<p>具体业务场景如下，比如一个业务操作，如果同时调用服务 A、B、C，需要满足要么同时成功；要么同时失败。A、B、C 可能是多个不同部门开发、部署在不同服务器上的远程服务，那么如何保证他们的一致性呢？<br><a id="more"></a></p>
+<h3 id="1-问题的起源"><a href="#1-问题的起源" class="headerlink" title="1. 问题的起源"></a>1. 问题的起源</h3><p>在分布式系统中，系统一般由多个独立的服务组成，多个服务之间如何保证数据一致是一个复杂问题。</p>
+<p>具体业务场景如下，比如一个业务操作，如果同时调用服务 A、B、C，需要满足要么同时成功；要么同时失败。A、B、C 可能是多个不同部门开发、部署在不同服务器上的远程服务，那么如何保证他们的一致性呢？</p>
+<h3 id="2-分布式事务"><a href="#2-分布式事务" class="headerlink" title="2. 分布式事务"></a>2. 分布式事务</h3><p>传统单机应用一般都会使用一个关系型数据库，好处是应用可以使用单机事务，为保证一致性我们只需要：开始一个事务，改变（插入，删除，更新）很多行，然后提交事务（如果有异常时回滚事务）。</p>
+<p>随着组织规模不断扩大，业务量不断增长，单机应用和数据库已经不足以支持庞大的业务量和数据量，这个时候需要对应用和数据库进行拆分，就出现了一个应用需要同时访问两个或两个以上的数据库情况，当数据需要跨库的时候，原先的单机事务就无法满足一致性需求了，所以就有人提出了分布式事务的概念，即<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4" target="_blank" rel="external">两阶段提交协议</a>。</p>
+<p>两阶段协议有一个致命缺点： 在它的执行过程中，所有节点都处于阻塞状态。即节点之间在等待对方的相应消息时，它将什么也做不了，这个对于一个系统的可用性是无法容忍的，而且协议存在协调者这个单点，一旦协调者发生故障，参与者会一直阻塞下去，所以两阶段协议并不适合大规模分布式系统。</p>
+<p>除此之外，还需要考虑的是，不同服务经常使用不同的数据库，应用会产生各种不同类型的数据，关系型数据库并不一定是最佳选择，大部分NoSQL数据库并不支持2PC。</p>
+<h3 id="3-最终一致性"><a href="#3-最终一致性" class="headerlink" title="3. 最终一致性"></a>3. 最终一致性</h3><p>分布式事务在大规模分布式事务中是不适用的，因为它降低了可用性。</p>
+<p>CAP理论告诉我们，一致性（Consistence)、可用性（Availability）和分区容忍性（Partition Tolerance）是无法同时满足的，而对于分布式系统，分区容忍性是无法放弃的，所以最后就变成了一致性和可用性的权衡。其中，一致性的概念又扩展出强一致性、弱一致性、最终一致性三个概念：</p>
+<ol>
+<li>强一致： 当更新操作完成之后，任何多个后续进程或者线程的访问都会返回最新的更新过的值。这种是对用户最友好的，就是用户上一次写什么，下一次就保证能读到什么。根据 CAP 理论，这种实现需要牺牲可用性。</li>
+<li>弱一致性：系统并不保证续进程或者线程的访问都会返回最新的更新过的值。系统在数据写入成功之后，不承诺立即可以读到最新写入的值，也不会具体的承诺多久之后可以读到。</li>
+<li>最终一致性：弱一致性的特定形式。系统保证在没有后续更新的前提下，系统最终返回上一次更新操作的值。在没有故障发生的前提下，不一致窗口的时间主要受通信延迟，系统负载和复制副本的个数影响。DNS 是一个典型的最终一致性系统。</li>
+</ol>
+<p>根据CAP，强一致性必然导致可用性的降低，大部分时候这是无法接受的，所以大部分分布式系统都会选择最终一致性，关于最终一致性的文章可以看Ebay的架构师在2008年发表给ACM的这篇文章：<a href="http://queue.acm.org/detail.cfm?id=1394128" target="_blank" rel="external">Base: An Acid Alternative</a>。</p>
+<p>企业实现最终一致性的模式一般有三种， 分别是本地事件表、事务消息以及TCC模式。</p>
+<h3 id="4-本地事件表"><a href="#4-本地事件表" class="headerlink" title="4. 本地事件表"></a>4. 本地事件表</h3><p>为了描述这个问题，先看一段典型的soa代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">public void transcation() &#123;</div><div class="line">	try &#123;</div><div class="line">		// 1. 操作本地数据库</div><div class="line">		boolean success = dao.update(model);</div><div class="line"></div><div class="line">		// 2. 如果本地操作成功，进行远端调用</div><div class="line">		if (success) &#123;</div><div class="line">			rpc.update(model);</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		// 3. 提交</div><div class="line">		commit();</div><div class="line">	&#125; catch (Exception e) &#123;</div><div class="line">		rollback(); // 发送异常，回滚</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上述代码是一段典型的SOA代码，先进行本地操作，然后进行rpc操作，如果rpc操作失败了，再将本地操作回滚。这段代码最大的问题是当rpc调用失败的时候，我们无法确认是网络失败还是业务失败，如果是业务失败，进行回滚是可以接受的，但是如果是网络失败，而远端成功，那就将导致不一致。还有一种可能，如果机器在rpc与commit之间宕机，那么本地提交将被回滚，但是远端可能已经提交。</p>
+<p>为了解决这个问题，可以参考数据库的WAL思想——将操作先存储在数据库中，然后进行调用，即这里的本地事件表方法。</p>
+<p>本地事件表方法将事件和业务数据保存在同一个数据库中，使用一个额外的“事件恢复”服务来恢复事件，由本地事务保证更新业务和发布事件的原子性。本地事件表的执行流程如下：</p>
+<ol>
+<li>服务在同一个本地事务中记录业务数据和事件。</li>
+<li>服务实时进行一次rpc调用，如果调用成功立即删除记录的事件。</li>
+<li>事件恢复服务定时从事件表中恢复未成功的事件，重新调用，重新调用成功才删除记录的事件。</li>
+</ol>
+<p>其中第2条的操作主要是为了增加rpc服务的实时性，由第三条保证事件一定被发布，同时下游服务需要保证幂等性。</p>
+<p>本地事件表的缺点是业务系统和事件系统耦合比较紧密，额外的事件数据库操作也会给数据库带来额外的压力，可能成为瓶颈。</p>
+<h3 id="5-事务消息"><a href="#5-事务消息" class="headerlink" title="5. 事务消息"></a>5. 事务消息</h3><p>不同与本地事件表，事务消息将事件持久化到外部的消息中心，消息中心需提供实时事件服务以接受微服务发布消息，同时消息中心还需要提供事件恢复服务来确认和恢复事件。</p>
+<p><img src="/2017/03/04/分布式环境下的数据一致性问题/消息中心.png" alt="xxx"></p>
+<ol>
+<li>业务服务在事务提交前，通过实时事件服务向事件系统请求发送事件，事件系统只记录事件并不真正发送。</li>
+<li>业务服务在提交后，通过实时事件服务向事件系统确认发送，事件得到确认后事件系统才真正发布事件到消息代理。</li>
+<li>业务服务在业务回滚时，通过实时事件向事件系统取消事件。</li>
+<li>如果业务服务在发送确认或取消之前停止服务了怎么办呢？事件系统的事件恢复服务会定期找到未确认发送的事件向业务服务查询状态，根据业务服务返回的状态决定事件是要发布还是取消。</li>
+</ol>
+<p>该方式将业务系统和事件系统独立解耦，都可以独立伸缩。缺点是这种方式需要一次额外的发送操作，并且需要发布者提供额外的查询接口。</p>
+<h3 id="6-TCC模式"><a href="#6-TCC模式" class="headerlink" title="6. TCC模式"></a>6. TCC模式</h3><p>一个完整的TCC业务由一个主业务服务和若干个从业务服务组成，主业务服务发起并完成整个业务活动，TCC模式要求从服务提供三个接口：Try、Confirm、Cancel。</p>
+<p><img src="/2017/03/04/分布式环境下的数据一致性问题/TCC.jpg" alt="xxx"></p>
+<ol>
+<li>TRYING 阶段主要是对业务系统做检测及资源预留</li>
+<li>CONFIRMING 阶段主要是对业务系统做确认提交，TRYING阶段执行成功并开始执行CONFIRMING阶段时，默认CONFIRMING阶段是不会出错的。即：只要TRYING成功，CONFIRMING一定成功。</li>
+<li>CANCELING 阶段主要是在业务执行错误，需要回滚的状态下执行的业务取消，预留资源释放</li>
+<li>而幂等性则是指业务方法调用一次与调用多次的执行返回结果是一样的。</li>
+</ol>
+<p>整个TCC业务分成两个阶段完成：</p>
+<p><img src="/2017/03/04/分布式环境下的数据一致性问题/TCC-2.jpg" alt="xxx"></p>
+<p>第一阶段：主业务服务分别调用所有从业务的try操作，并在活动管理器中登记所有从业务服务。当所有从业务服务的try操作都调用成功或者某个从业务服务的try操作失败，进入第二阶段。</p>
+<p>第二阶段：活动管理器根据第一阶段的执行结果来执行confirm或cancel操作。如果第一阶段所有try操作都成功，则活动管理器调用所有从业务活动的confirm操作。否则调用所有从业务服务的cancel操作。</p>
+<p>举个支付项目的例子：</p>
+<p>支付系统接收到会员的支付请求后，需要扣减会员账户余额、增加会员积分（暂时假设需要同步实现）增加商户账户余额再假设：会员系统、商户系统、积分系统是独立的三个子系统，无法通过传统的事务方式进行处理。</p>
+<ol>
+<li>TRYING阶段：我们需要做的就是会员资金账户的资金预留，即：冻结会员账户的金额（订单金额）</li>
+<li>CONFIRMING阶段：我们需要做的就是会员积分账户增加积分余额，商户账户增加账户余额</li>
+<li>CANCELING阶段：该阶段需要执行的就是解冻释放我们扣减的会员余额</li>
+</ol>
+<h3 id="7-幂等性"><a href="#7-幂等性" class="headerlink" title="7. 幂等性"></a>7. 幂等性</h3><p>上面的模式都依赖于服务的幂等性，这一部分说一说幂等性的实现。有些事件本身是幂等的，有些事件却不是。</p>
+<h4 id="7-1-本身具有幂等性的事件需要考虑执行顺序"><a href="#7-1-本身具有幂等性的事件需要考虑执行顺序" class="headerlink" title="7.1 本身具有幂等性的事件需要考虑执行顺序"></a>7.1 本身具有幂等性的事件需要考虑执行顺序</h4><p>如果事件本身描述的是某个时间点的固定值（如账户余额为100），而不是描述一条转换指令（如余额增加10），那么这个事件是幂等的。我们要意识到事件可能出现的次数和顺序是不可预测的，需要保证幂等事件的顺序执行，否则结果往往不是我们想要的。</p>
+<p>如果我们先后发送两条事件，（1）账户余额更新为100，（2）账户余额更新为120，但是业务系统先收到（2）后收到（1），那么就可能导致错误。</p>
+<p>为保证事件的顺序一个简单的做法是在事件中添加时间戳，微服务记录每类型的事件最后处理的时间戳，如果收到的事件的时间戳早于我们记录的，丢弃该事件。如果事件不是在同一个服务器上发出的，那么服务器之间的时间同步是个难题，更稳妥的做法是使用一个全局递增序列号替换时间戳。</p>
+<h4 id="7-2-本身不具有幂等性的事件操作"><a href="#7-2-本身不具有幂等性的事件操作" class="headerlink" title="7.2 本身不具有幂等性的事件操作"></a>7.2 本身不具有幂等性的事件操作</h4><p>对于本身不具有幂等性的操作，主要思想是为每条事件存储执行结果，当收到一条事件时我们需要根据事件的id查询该事件是否已经执行过，如果执行过直接返回上一次的执行结果，否则调度执行事件。</p>
+<p>在这个思想下我们需要考虑重复执行一条事件和查询存储结果的开销。重复处理开销小的事件重复处理，如果重复处理一条事件的开销相比额外一次查询的开销要高很多，使用一个过滤服务来过滤重复的事件，过滤服务使用事件存储存储已经处理过的事件和结果。</p>
+<p>当收到一条事件时，过滤服务首先查询事件存储，确定该条事件是否已经被处理过，如果事件已经被处理过，直接返回存储的结果；否则调度业务服务执行处理，并将处理完的结果存储到事件存储中。</p>
+<p>一般情况下上面的方法能够运行得很好，如果我们的微服务是RPC类的服务我们需要更加小心，可能出现的问题在于：</p>
+<ol>
+<li>过滤服务在业务处理完成后才将事件结果存储到事件存储中，但是在业务处理完成前有可能就已经收到重复事件，由于是RPC服务也不能依赖数据库的唯一性约束；</li>
+<li>业务服务的处理结果可能出现位置状态，一般出现在正常提交请求但是没有收到响应的时候。</li>
+</ol>
+<p>对于问题（1）可以按步骤记录事件处理过程，比如事件的记录事件的处理过程为“接收”、“发送请求”、“收到应答”、“处理完成”。好处是过滤服务能及时的发现重复事件，进一步还能根据事件状态作不同的处理。</p>
+<p>对于问题（2）可以通过一次额外的查询请求来确定事件的实际处理状态，要注意额外的查询会带来更长时间的延时，更进一步可能某些RPC服务根本不提供查询接口。此时只能选择接受暂时的不一致，时候采用对账和人工接入的方式来保证一致性。</p>
+<p>需要注意的是上面的幂等处理方法要求事件必须有唯一的ID（这个ID一般是业务相关的），比如用ID来保证数据库的唯一性约束；使用事件ID来确认事件是否已经被处理；使用事件ID来查询RPC服务的事件处理结果等待。</p>
+<h3 id="8-参考："><a href="#8-参考：" class="headerlink" title="8 参考："></a>8 参考：</h3><p><a href="http://www.jiagoushuo.com/article/1000452.html" target="_blank" rel="external">http://www.jiagoushuo.com/article/1000452.html</a><br><a href="http://weibo.com/ttarticle/p/show?id=2309403965965003062676" target="_blank" rel="external">http://weibo.com/ttarticle/p/show?id=2309403965965003062676</a><br><a href="http://h2ex.com/1496" target="_blank" rel="external">http://h2ex.com/1496</a><br><a href="https://www.zhihu.com/question/21612832" target="_blank" rel="external">https://www.zhihu.com/question/21612832</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式/" rel="tag"># 分布式</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/01/基于Netty实现自己的网络框架/" rel="next" title="基于Netty实现自己的网络框架">
+                <i class="fa fa-chevron-left"></i> 基于Netty实现自己的网络框架
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/05/ZooKeeper原理及使用/" rel="prev" title="ZooKeeper原理及使用">
+                ZooKeeper原理及使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">Artikel</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">Tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-问题的起源"><span class="nav-number">1.</span> <span class="nav-text">1. 问题的起源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-分布式事务"><span class="nav-number">2.</span> <span class="nav-text">2. 分布式事务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-最终一致性"><span class="nav-number">3.</span> <span class="nav-text">3. 最终一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-本地事件表"><span class="nav-number">4.</span> <span class="nav-text">4. 本地事件表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-事务消息"><span class="nav-number">5.</span> <span class="nav-text">5. 事务消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-TCC模式"><span class="nav-number">6.</span> <span class="nav-text">6. TCC模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-幂等性"><span class="nav-number">7.</span> <span class="nav-text">7. 幂等性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#7-1-本身具有幂等性的事件需要考虑执行顺序"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 本身具有幂等性的事件需要考虑执行顺序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-2-本身不具有幂等性的事件操作"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 本身不具有幂等性的事件操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-参考："><span class="nav-number">8.</span> <span class="nav-text">8 参考：</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+</div>
+
+
+<div class="powered-by">
+  Erstellt mit  <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

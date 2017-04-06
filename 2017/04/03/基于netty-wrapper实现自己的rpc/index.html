@@ -1,0 +1,728 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="分布式," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="在之前的基于Netty实现自己的网络框架中，我们实现了自己的网络框架netty-wrapper，本文将展示如何使用netty-wrapper实现自己的rpc框架。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于netty-wrapper实现自己的rpc">
+<meta property="og:url" content="http://yoursite.com/2017/04/03/基于netty-wrapper实现自己的rpc/index.html">
+<meta property="og:site_name" content="Share">
+<meta property="og:description" content="在之前的基于Netty实现自己的网络框架中，我们实现了自己的网络框架netty-wrapper，本文将展示如何使用netty-wrapper实现自己的rpc框架。">
+<meta property="og:updated_time" content="2017-04-06T15:46:00.764Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于netty-wrapper实现自己的rpc">
+<meta name="twitter:description" content="在之前的基于Netty实现自己的网络框架中，我们实现了自己的网络框架netty-wrapper，本文将展示如何使用netty-wrapper实现自己的rpc框架。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/04/03/基于netty-wrapper实现自己的rpc/"/>
+
+
+
+
+
+  <title> 基于netty-wrapper实现自己的rpc | Share </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Share</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Share Tech, Share Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Startseite
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archiv
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/03/基于netty-wrapper实现自己的rpc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Share">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                基于netty-wrapper实现自己的rpc
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">admin</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-04-03T16:48:36+08:00">
+                2017-04-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在之前的<a href="">基于Netty实现自己的网络框架</a>中，我们实现了自己的网络框架<a href="https://github.com/AdolphLi/netty-wrapper" target="_blank" rel="external">netty-wrapper</a>，本文将展示如何使用netty-wrapper实现自己的rpc框架。</p>
+<a id="more"></a>
+<p>rpc框架的测试用例如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">// 1. 发布服务</div><div class="line">factory.provider(&quot;hello&quot;).service(&quot;com.github.adolphli.rpc.HelloService&quot;).serviceId(&quot;uniqueServiceId&quot;).impl(new HelloServiceImpl()).publish();</div><div class="line"></div><div class="line">// 2. 引用服务</div><div class="line">HelloService helloService = factory.consumer(&quot;hello&quot;).service(&quot;com.github.adolphli.rpc.HelloService&quot;).serviceId(&quot;uniqueServiceId&quot;).methodTimeout(&quot;hello&quot;, 1000).targetUrl(&quot;127.0.0.1:6666&quot;).subscribe();</div><div class="line"></div><div class="line">// 3. rpc调用</div><div class="line">People result = helloService.hello(new People(Integer.toString(index), index));</div></pre></td></tr></table></figure>
+<p>使用rpc框架一共分三步，分别是：</p>
+<ol>
+<li>发布服务；</li>
+<li>引用服务；</li>
+<li>进行rpc调用。</li>
+</ol>
+<p>在设计api的时候使用了Fluent API设计，所以一共只有三行代码。</p>
+<p>多线程并发代码可以看<a href="https://github.com/AdolphLi/sample-rpc/blob/master/src/test/java/com/github/adolphli/rpc/ConcurrentTest.java" target="_blank" rel="external">这里</a>，本文的接下部分主要用于介绍整个rpc框架的核心代码。</p>
+<h2 id="RpcRequest、RpcResponse"><a href="#RpcRequest、RpcResponse" class="headerlink" title="RpcRequest、RpcResponse"></a>RpcRequest、RpcResponse</h2><p>rpc在进行远端服务调用时进行了一次网络传输，网络传输就牵扯到请求（RpcRequest）与响应（RpcResponse）。Request对象主要包含服务名、方法名、方法参数签名与方法参数。服务名可以帮助服务端选择正确的对象进行处理，方法名和方法参数签名唯一确定了对象的处理方法，方法参数用于执行调用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">public class RpcRequest implements Serializable &#123;</div><div class="line"></div><div class="line">    // rpc调用的方法名</div><div class="line">    private String methodName;</div><div class="line">    // rpc调用的服务名</div><div class="line">    private String uniqueServiceName;</div><div class="line">    // rpc调用的方法参数</div><div class="line">    private Object[] methodArgs;</div><div class="line">    // rpc调用的方法参数签名</div><div class="line">    private String[] methodArgSigs;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>相较于RpcRequest，RpcResponse就简单多了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">public class RpcResponse implements Serializable &#123;</div><div class="line">    </div><div class="line">    private String errorMsg;</div><div class="line">    private boolean isError;</div><div class="line">    private Object response;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>isError标记服务端是否报错，如果服务端报错，errorMsg携带错误信息，否则respone携带rpc调用结果。</p>
+<h2 id="服务端代码"><a href="#服务端代码" class="headerlink" title="服务端代码"></a>服务端代码</h2><p>服务端代码位于<a href="https://github.com/AdolphLi/sample-rpc/tree/master/src/main/java/com/github/adolphli/rpc/server" target="_blank" rel="external">com.github.adolphli.rpc.server包</a>中，RpcProviderBean是rpc 服务端属性封装类，RpcRequestProcessor是<a href="https://github.com/AdolphLi/netty-wrapper/blob/master/src/main/java/com/github/adolphli/netty/wrapper/rpc/RequestProcessor.java" target="_blank" rel="external">RequestProcessor</a>实现类，用于处理RpcRequest请求,RpcServer是服务端封装类，用于启动rpc server及发布服务。</p>
+<h3 id="RpcProviderBean"><a href="#RpcProviderBean" class="headerlink" title="RpcProviderBean"></a>RpcProviderBean</h3><p>RpcProviderBean用于存储服务端发布服务必须属性，一共包含三个属性，分别是接口名、实现类及接口ID：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">public class RpcProviderBean &#123;</div><div class="line">    // 发布接口名</div><div class="line">    private String serviceInterface;</div><div class="line">    // 发布接口ID</div><div class="line">    private String serviceId;</div><div class="line">    // 接口实现类</div><div class="line">    private Object target;</div><div class="line"></div><div class="line">	// ...</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>可以在看下服务端发布服务代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">// 1. 发布服务</div><div class="line">factory.provider(&quot;hello&quot;).service(&quot;com.github.adolphli.rpc.HelloService&quot;).serviceId(&quot;uniqueServiceId&quot;).impl(new HelloServiceImpl()).publish();</div></pre></td></tr></table></figure>
+<p>以上代码主要就是用于指定RpcProviderBean的三个属性。</p>
+<h3 id="RpcServer"><a href="#RpcServer" class="headerlink" title="RpcServer"></a>RpcServer</h3><p>RpcServer是服务端封装类，用于启动rpc server及发布服务。RpcServer包含以下几个属性：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">public class RpcServer &#123;</div><div class="line"></div><div class="line">    // 服务端端口</div><div class="line">    private static final int RPC_SERVER_PORT = 6666;</div><div class="line">    // rpcServer</div><div class="line">    private static RpcServer server;</div><div class="line">    // ConcurrentHashMap， 用于存储实现类</div><div class="line">    public static final ConcurrentMap&lt;String, Object&gt; implementationClasses = new ConcurrentHashMap&lt;String, Object&gt;();</div><div class="line">    // ConcurrentHashMap， 用于存储方法</div><div class="line">    public static final ConcurrentMap&lt;String, Map&lt;String, Method&gt;&gt; methods = new ConcurrentHashMap&lt;String, Map&lt;String, Method&gt;&gt;();</div><div class="line"></div><div class="line">	// ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>RPC_SERVER_PORT指定了服务端端口，implementationClasses用于存储实现类，methods属性用于存储方法，server属性用于实现单例模式。</p>
+<p>可以看下RpcServer的构造函数，该构造函数基于<a href="https://github.com/AdolphLi/netty-wrapper" target="_blank" rel="external">netty-wrapper</a>启动了一个DefaultServer，并将RpcRequestProcessor注册成RequestProcessor：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">private RpcServer() throws Exception &#123;</div><div class="line">    Server server = new DefaultServer(RPC_SERVER_PORT);</div><div class="line">    server.registerRequestProcessor(new RpcRequestProcessor());</div><div class="line">    server.start();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>发布服务的逻辑封装在RpcServer的provide方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">public void provide(RpcProviderBean provider) throws Exception &#123;</div><div class="line"></div><div class="line">    implementationClasses.put(provider.getUniqueServiceName(), provider.getTarget());</div><div class="line"></div><div class="line">    Map&lt;String, Method&gt; targetMethods = new HashMap&lt;String, Method&gt;();</div><div class="line">    for (Method m : provider.getServiceClass().getMethods()) &#123;</div><div class="line">        StringBuilder methodParams = new StringBuilder();</div><div class="line">        methodParams.append(m.getName());</div><div class="line">        for (Class param : m.getParameterTypes()) &#123;</div><div class="line">            methodParams.append(param.getName());</div><div class="line">        &#125;</div><div class="line">        targetMethods.put(methodParams.toString(), m);</div><div class="line">    &#125;</div><div class="line">    methods.put(provider.getUniqueServiceName(), targetMethods);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从代码中可以看到，对于rpc服务的发布，服务端最主要的就是保存发布服务的类以及类的所有方法。保存了这些信息哪里用呢，答案就是RpcRequestProcessor。</p>
+<h3 id="RpcRequestProcessor"><a href="#RpcRequestProcessor" class="headerlink" title="RpcRequestProcessor"></a>RpcRequestProcessor</h3><p>RpcRequestProcessor是<a href="https://github.com/AdolphLi/netty-wrapper/blob/master/src/main/java/com/github/adolphli/netty/wrapper/rpc/RequestProcessor.java" target="_blank" rel="external">RequestProcessor</a>实现类，用于处理RpcRequest请求,RequestProcessor最核心的就是handleRequest方法，我们可以直接看RpcRequestProcessor的handleRequest方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">public void handleRequest(HandlerContext handlerContext, RpcRequest request) &#123;</div><div class="line"></div><div class="line">    RpcResponse response;</div><div class="line">    try &#123;</div><div class="line">        String serviceName = request.getUniqueServiceName();</div><div class="line">        Object implementationClass = RpcServer.getInstance().getImplementationClass(serviceName);</div><div class="line">        Method method = RpcServer.getInstance().getMethod(serviceName, getMethodSig(request));</div><div class="line">        Object result = method.invoke(implementationClass, request.getMethodArgs());</div><div class="line">        response = new RpcResponse();</div><div class="line">        response.setResponse(result);</div><div class="line">    &#125; catch (Throwable e) &#123;</div><div class="line">        response = createErrorRespnse(e.getMessage());</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    try &#123;</div><div class="line">        handlerContext.sendResponse(response);</div><div class="line">    &#125; catch (Throwable e) &#123;</div><div class="line">        throw new RuntimeException(e);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从代码中可以看到，服务端处理请求的流程如下：</p>
+<ol>
+<li>RpcRequest获取唯一服务名；</li>
+<li>通过RpcServer的接口获取实现类；</li>
+<li>通过RpcServer的接口获取实现调用方法；</li>
+<li>针对第2步及第3步结果进行方法调用，得到调用结果；</li>
+<li>组装RpcResponse，如果调用成功，将结果放入RpcResponse，否则在reponse中写入错误信息；</li>
+<li>返回RpcResponse。</li>
+</ol>
+<h2 id="客户端代码"><a href="#客户端代码" class="headerlink" title="客户端代码"></a>客户端代码</h2><p>服务端代码位于<a href="https://github.com/AdolphLi/sample-rpc/tree/master/src/main/java/com/github/adolphli/rpc/client" target="_blank" rel="external">com.github.adolphli.rpc.client包</a>中，RpcConsumerBean是rpc 客户端属性封装类，ClientManagerrpc是rpc客户端管理类，实现一个url一个Client的目的，RpcServiceProxy是调用代理对象， 所有rpc调用均会被此类代理。</p>
+<h3 id="RpcConsumerBean"><a href="#RpcConsumerBean" class="headerlink" title="RpcConsumerBean"></a>RpcConsumerBean</h3><p>RpcConsumerBean是rpc 客户端属性封装类，主要存储的属性是接口名，接口ID超时时间及目标地址：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">public class RpcConsumerBean &#123;</div><div class="line"></div><div class="line">    // 订阅接口名</div><div class="line">    private String serviceInterface;</div><div class="line">    // 订阅接口ID</div><div class="line">    private String serviceId;</div><div class="line">    // 服务超时时间</div><div class="line">    private int clientTimeout;</div><div class="line">    // 方法超时时间</div><div class="line">    private final Map&lt;String, Integer&gt; methodSpecials = Collections.synchronizedMap(new HashMap&lt;String, Integer&gt;());</div><div class="line">    // 目标地址</div><div class="line">    private String targetUrl;</div><div class="line"></div><div class="line">    private static final int DEFAULT_TIMEOUT = 3000;</div><div class="line"></div><div class="line">	// ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>RpcConsumerBean 中的getTarget方法需要特别注意，该方法会返回实现了serviceInterface接口的代理对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * 得到代理对象， 此代理对象已经实现serviceInterface接口</div><div class="line"> *</div><div class="line"> * @return</div><div class="line"> * @throws Exception</div><div class="line"> */</div><div class="line">public Object getTarget() throws Exception &#123;</div><div class="line"></div><div class="line">    ProxyFactory factory = new ProxyFactory();</div><div class="line">    Class javaClass = Class.forName(serviceInterface);</div><div class="line">    if (javaClass.isInterface()) &#123;</div><div class="line">        factory.addInterface(javaClass);</div><div class="line">    &#125; else &#123;</div><div class="line">        factory.setTargetClass(javaClass);</div><div class="line">        factory.setProxyTargetClass(true);</div><div class="line">    &#125;</div><div class="line">    factory.addAdvice(new RpcServiceProxy(this));</div><div class="line"></div><div class="line">    return factory.getProxy();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码最核心部分在于factory.addAdvice(new RpcServiceProxy(this))，在RpcServiceProxy内部会将方法调用转换为rpc调用。</p>
+<h3 id="RpcServiceProxy"><a href="#RpcServiceProxy" class="headerlink" title="RpcServiceProxy"></a>RpcServiceProxy</h3><p>RpcServiceProxy实现了MethodInterceptor接口，该接口最主要的方法是invoke方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">public Object invoke(MethodInvocation methodInvocation) throws Throwable &#123;</div><div class="line">    RpcRequest request = createRequest(methodInvocation);</div><div class="line">    final Client client = ClientManager.getClient(consumer.getTargetUrl());</div><div class="line">    RpcResponse response = (RpcResponse) client.invokeSync(request, consumer.getTimeout(methodInvocation.getMethod().getName()));</div><div class="line">    if (response.isError()) &#123;</div><div class="line">        throw new RuntimeException(response.getErrorMsg());</div><div class="line">    &#125;</div><div class="line">    return response.getResponse();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码的逻辑其实也很简单，处理步骤如下：</p>
+<ol>
+<li>首先根据methodInvocation构造RpcRequest对象；</li>
+<li>根据目标地址，从ClientManager获取客户端，ClientManager内部包含一个map缓存，实现一个url一个client；</li>
+<li>进行方法调用，得到rpc调用结果；</li>
+<li>如果返回结果错误标志位为true，抛出运行时异常，否则返回调用结果。</li>
+</ol>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>至此，一个简单的rpc框架就已经完成了，但是需要说明的是，这只是一个简单的rpc框架，和dubbo这类SOA框架相比还欠缺很多功能，例如服务发现，服务治理，限流熔断等等，这些内容将在附录里进行简单介绍。</p>
+<h2 id="附：分布式服务框架的方方面面"><a href="#附：分布式服务框架的方方面面" class="headerlink" title="附：分布式服务框架的方方面面"></a>附：分布式服务框架的方方面面</h2><p>服务化是目前大型互联网公司都在实践的一条技术架构，关于为什么转型服务化可以看下<a href="http://mp.weixin.qq.com/s?__biz=MjM5ODYxMDA5OQ==&amp;mid=2651959519&amp;idx=1&amp;sn=065074b135fc9cb243abe897261e1a72&amp;scene=21#wechat_redirect" target="_blank" rel="external">互联网架构为什么要做服务化？</a>这篇文章。</p>
+<p>分布式服务框架是服务化最重要的基础组件，本文将对分布式服务框架的一些关键特性进行介绍，由于这部分内容实在太火，网上已经有大量介绍文章，这里主要担当搬运工角色。</p>
+<p><a href="http://mp.weixin.qq.com/s/HNo4-tSOA5haZccaG_fP7w" target="_blank" rel="external">服务化框架技术选型实践</a>是京东在选择分布式服务框架时的一些思考，这篇文章对服务框架的最基本功能进行了介绍。</p>
+<p>文章描述，最基础的服务化框架包括如下模块：统一的RPC框架，服务注册中心及管理平台，然后京东对这三个模块的技术选型，但是由于篇幅，文章没有对分组配置、路由策略、黑白名单、降级开关、限流信息、超时时间、重试次数内容进行详细扩展。类似的文章还有<a href="http://www.infoq.com/cn/articles/weibo-rpc-practice" target="_blank" rel="external">微博平台的RPC服务化实践</a>。</p>
+<p>江南白衣是我最喜欢的博主，它些关于服务化的一系列文章：</p>
+<ul>
+<li><a href="http://calvin1978.blogcn.com/articles/routing.html" target="_blank" rel="external">服务化之－负载均衡与路由的设计</a></li>
+<li><a href="http://calvin1978.blogcn.com/articles/serviceconfig.html" target="_blank" rel="external">服务化体系之－配置中心，在ZK或etcd之外</a></li>
+<li><a href="http://calvin1978.blogcn.com/articles/version.html" target="_blank" rel="external">服务化体系之－兼容性与版本号</a></li>
+<li><a href="http://calvin1978.blogcn.com/articles/ratelimiter.html" target="_blank" rel="external">服务化体系之－限流</a></li>
+<li><a href="http://calvin1978.blogcn.com/articles/uuid.html" target="_blank" rel="external">服务化框架－分布式Unique ID的生成方法一览</a></li>
+</ul>
+<p>刷开发者头条，刷到了一篇讲解<a href="http://mp.weixin.qq.com/s/wIQIv4TAHRIqR_X9iSz3Hw" target="_blank" rel="external">超时，重试，熔断，限流</a>的好文，出自去哪儿工程师。</p>
+<p><a href="https://segmentfault.com/a/1190000005988895" target="_blank" rel="external">防雪崩利器：熔断器 Hystrix 的原理与使用</a></p>
+<p>分布式系统怎么可以少掉trace信息呢，没有trace信息，我们就无法了解每个方法调用的耗时信息，<a href="https://bigbully.github.io/Dapper-translation/" target="_blank" rel="external">Dapper，大规模分布式系统的跟踪系统</a>介绍了tracer系统的所有概念。</p>
+<p>实现服务化之后必然会遇到数据一致性问题，关于数据一致性问题，可以参考我之前写的<a href="分布式环境下的数据一致性问题">分布式环境下的数据一致性问题分析</a>。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式/" rel="tag"># 分布式</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/03/Innodb中的事务隔离级别和锁的关系/" rel="next" title="Innodb中的事务隔离级别和锁的关系">
+                <i class="fa fa-chevron-left"></i> Innodb中的事务隔离级别和锁的关系
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">Artikel</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">Tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#RpcRequest、RpcResponse"><span class="nav-number">1.</span> <span class="nav-text">RpcRequest、RpcResponse</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#服务端代码"><span class="nav-number">2.</span> <span class="nav-text">服务端代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RpcProviderBean"><span class="nav-number">2.1.</span> <span class="nav-text">RpcProviderBean</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RpcServer"><span class="nav-number">2.2.</span> <span class="nav-text">RpcServer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RpcRequestProcessor"><span class="nav-number">2.3.</span> <span class="nav-text">RpcRequestProcessor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#客户端代码"><span class="nav-number">3.</span> <span class="nav-text">客户端代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RpcConsumerBean"><span class="nav-number">3.1.</span> <span class="nav-text">RpcConsumerBean</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RpcServiceProxy"><span class="nav-number">3.2.</span> <span class="nav-text">RpcServiceProxy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附：分布式服务框架的方方面面"><span class="nav-number">5.</span> <span class="nav-text">附：分布式服务框架的方方面面</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+</div>
+
+
+<div class="powered-by">
+  Erstellt mit  <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

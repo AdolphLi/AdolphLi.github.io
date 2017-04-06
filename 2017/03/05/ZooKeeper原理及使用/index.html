@@ -1,0 +1,749 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="分布式," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="ZooKeeper是一个分布式的，开放源码的分布式应用协调服务，是Google Chubby的一个开源的实现，是Hadoop和Hbase的重要组件，它的主要功能是为分布式系统提供一致性协调(Coordination)服务。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZooKeeper原理及使用">
+<meta property="og:url" content="http://yoursite.com/2017/03/05/ZooKeeper原理及使用/index.html">
+<meta property="og:site_name" content="Share">
+<meta property="og:description" content="ZooKeeper是一个分布式的，开放源码的分布式应用协调服务，是Google Chubby的一个开源的实现，是Hadoop和Hbase的重要组件，它的主要功能是为分布式系统提供一致性协调(Coordination)服务。">
+<meta property="og:image" content="http://www.wuzesheng.com/wp-content/uploads/2013/12/zookeeper-tree.jpg">
+<meta property="og:updated_time" content="2017-03-05T01:54:28.704Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ZooKeeper原理及使用">
+<meta name="twitter:description" content="ZooKeeper是一个分布式的，开放源码的分布式应用协调服务，是Google Chubby的一个开源的实现，是Hadoop和Hbase的重要组件，它的主要功能是为分布式系统提供一致性协调(Coordination)服务。">
+<meta name="twitter:image" content="http://www.wuzesheng.com/wp-content/uploads/2013/12/zookeeper-tree.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/05/ZooKeeper原理及使用/"/>
+
+
+
+
+
+  <title> ZooKeeper原理及使用 | Share </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Share</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Share Tech, Share Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Startseite
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archiv
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/05/ZooKeeper原理及使用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Share">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                ZooKeeper原理及使用
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">admin</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-05T09:47:30+08:00">
+                2017-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>ZooKeeper是一个分布式的，开放源码的分布式应用协调服务，是Google Chubby的一个开源的实现，是Hadoop和Hbase的重要组件，它的主要功能是为分布式系统提供一致性协调(Coordination)服务。<br><a id="more"></a></p>
+<h2 id="1-ZooKeeper基本原理"><a href="#1-ZooKeeper基本原理" class="headerlink" title="1. ZooKeeper基本原理"></a>1. ZooKeeper基本原理</h2><p>ZooKeeper是一个分布式的，开放源码的分布式应用协调服务，是Google Chubby的一个开源的实现，是Hadoop和Hbase的重要组件，它的主要功能是为分布式系统提供一致性协调(Coordination)服务。</p>
+<h3 id="1-1-数据模型"><a href="#1-1-数据模型" class="headerlink" title="1.1 数据模型"></a>1.1 数据模型</h3><p><img src="http://www.wuzesheng.com/wp-content/uploads/2013/12/zookeeper-tree.jpg" alt="pic"></p>
+<p>如上图所示，ZooKeeper数据模型的结构与Unix文件系统很类似，整体上可以看作是一棵树，每个节点称做一个ZNode。每个ZNode都可以通过其路径唯一标识，比如上图中第三层的第一个ZNode, 它的路径是/app1/c1，在每个ZNode上可存储少量数据(默认是1M)。</p>
+<h3 id="1-2-重要概念"><a href="#1-2-重要概念" class="headerlink" title="1.2 重要概念"></a>1.2 重要概念</h3><h4 id="1-2-1-ZNode"><a href="#1-2-1-ZNode" class="headerlink" title="1.2.1 ZNode"></a>1.2.1 ZNode</h4><p>前文已介绍了ZNode, ZNode根据其本身的特性，可以分为下面两类：</p>
+<ul>
+<li>Regular ZNode: 常规型ZNode, 用户需要显式的创建、删除</li>
+<li>Ephemeral ZNode: 临时型ZNode, 用户创建它之后，可以显式的删除，也可以在创建它的Session结束后，由ZooKeeper Server自动删除</li>
+</ul>
+<p>ZNode还有一个Sequential的特性，如果创建的时候指定的话，该ZNode的名字后面会自动Append一个不断增加的SequenceNo。</p>
+<h4 id="1-2-2-Session"><a href="#1-2-2-Session" class="headerlink" title="1.2.2 Session"></a>1.2.2 Session</h4><p>Client与ZooKeeper之间的通信，需要创建一个Session，这个Session会有一个超时时间。</p>
+<p>在实际的应用中，如果Client与Server之间的通信足够频繁，Session的维护就不需要其它额外的消息了。否则，ZooKeeper Client会每t/3 ms发一次心跳给Server，如果Client 2t/3 ms没收到来自Server的心跳回应，就会换到一个新的ZooKeeper Server上。这里t是用户配置的Session的超时时间。</p>
+<h4 id="1-2-3-Watcher"><a href="#1-2-3-Watcher" class="headerlink" title="1.2.3 Watcher"></a>1.2.3 Watcher</h4><p>ZooKeeper支持一种Watch操作，Client可以在某个ZNode上设置一个Watcher，来Watch该ZNode上的变化。如果该ZNode上有相应的变化，就会触发这个Watcher，把相应的事件通知给设置Watcher的Client。需要注意的是，ZooKeeper中的Watcher是一次性的，即触发一次就会被取消，如果想继续Watch的话，需要客户端重新设置Watcher。</p>
+<h3 id="1-3-ZooKeeper特性"><a href="#1-3-ZooKeeper特性" class="headerlink" title="1.3 ZooKeeper特性"></a>1.3 ZooKeeper特性</h3><h4 id="1-3-1-读、写-更新-模式"><a href="#1-3-1-读、写-更新-模式" class="headerlink" title="1.3.1 读、写(更新)模式"></a>1.3.1 读、写(更新)模式</h4><p>在ZooKeeper集群中，读可以从任意一个ZooKeeper Server读，这一点是保证ZooKeeper比较好的读性能的关键。</p>
+<p>写的请求会先Forwarder到Leader，然后由Leader来通过ZooKeeper中的原子广播协议，将请求广播给所有的Follower，Leader收到一半以上的写成功的Ack后，就认为该写成功了，就会将该写进行持久化，并告诉客户端写成功了。</p>
+<h4 id="1-3-2-WAL和Snapshot"><a href="#1-3-2-WAL和Snapshot" class="headerlink" title="1.3.2 WAL和Snapshot"></a>1.3.2 WAL和Snapshot</h4><p>和大多数分布式系统一样，ZooKeeper也有WAL(Write-Ahead-Log)，对于每一个更新操作，ZooKeeper都会先写WAL, 然后再对内存中的数据做更新，然后向Client通知更新结果。</p>
+<p>另外，ZooKeeper还会定期将内存中的目录树进行Snapshot，落地到磁盘上，这个跟HDFS中的FSImage是比较类似的。这么做的主要目的，一当然是数据的持久化，二是加快重启之后的恢复速度，如果全部通过Replay WAL的形式恢复的话，会比较慢。</p>
+<h4 id="1-3-3-FIFO"><a href="#1-3-3-FIFO" class="headerlink" title="1.3.3 FIFO"></a>1.3.3 FIFO</h4><p>对于每一个ZooKeeper客户端而言，所有的操作都是遵循FIFO顺序的，这一特性是由下面两个基本特性来保证的：</p>
+<ul>
+<li>ZooKeeper Client与Server之间的网络通信是基于TCP，TCP保证了Client/Server之间传输包的顺序；</li>
+<li>ZooKeeper Server执行客户端请求也是严格按照FIFO顺序的。</li>
+</ul>
+<h4 id="1-3-4-Linearizability"><a href="#1-3-4-Linearizability" class="headerlink" title="1.3.4 Linearizability"></a>1.3.4 Linearizability</h4><p>在ZooKeeper中，所有的更新操作都有严格的偏序关系，更新操作都是串行执行的，这一点是保证ZooKeeper功能正确性的关键。</p>
+<h2 id="2-单机部署Zookeeper"><a href="#2-单机部署Zookeeper" class="headerlink" title="2. 单机部署Zookeeper"></a>2. 单机部署Zookeeper</h2><p>本部分介绍如何部署Zookeeper，由于只有一台电脑，所以使用单机部署，步骤如下：</p>
+<p>1、 <a href="http://apache.fayea.com/zookeeper/" target="_blank" rel="external">http://apache.fayea.com/zookeeper/</a>  下载zk；<br>2、 解压到本地: ~/zookeeper-3.4.9<br>3、 cp conf/zoo_sample.cfg conf/zk0.cfg<br>4、 启动Zookeeper</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">bin/zkServer.sh start zk0.cfg</div><div class="line"></div><div class="line">ZooKeeper JMX enabled by default</div><div class="line">Using config: /Users/caojie/tools/zk/zookeeper-3.4.9/bin/../conf/zk0.cfg</div><div class="line">Starting zookeeper ... STARTED</div></pre></td></tr></table></figure>
+<p>5、 验证启动成功<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">jps</div><div class="line">5321 QuorumPeerMain</div><div class="line">5338 Jps</div></pre></td></tr></table></figure></p>
+<p>6、查看运行状态</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">~/tools/zk/zookeeper-3.4.9 bin/zkServer.sh status zk0.cfg</div><div class="line">ZooKeeper JMX enabled by default</div><div class="line">Using config: /Users/caojie/tools/zk/zookeeper-3.4.9/bin/../conf/zk0.cfg</div><div class="line">Mode: standalone</div></pre></td></tr></table></figure>
+<p>状态显示为standalone。</p>
+<p>这里讲解下zk0.cfg各属性的意思：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">tickTime=2000</div><div class="line">dataDir=/home/conan/zoo/zk0</div><div class="line">clientPort=2181</div></pre></td></tr></table></figure>
+<p>tickTime ：基本事件单元，以毫秒为单位。这个时间是作为 Zookeeper 服务器之间或客户端与服务器之间维持心跳的时间间隔，也就是每个 tickTime 时间就会发送一个心跳。</p>
+<p>dataDir ：存储内存中数据库快照的位置，顾名思义就是 Zookeeper 保存数据的目录，默认情况下，Zookeeper 将写数据的日志文件也保存在这个目录里。</p>
+<p>clientPort ：这个端口就是客户端连接 Zookeeper 服务器的端口，Zookeeper 会监听这个端口，接受客户端的访问请求。</p>
+<h2 id="3-Zookeeper-客户端学习"><a href="#3-Zookeeper-客户端学习" class="headerlink" title="3. Zookeeper 客户端学习"></a>3. Zookeeper 客户端学习</h2><p>输入以下命令能够连接zk：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">bin/zkCli.sh</div></pre></td></tr></table></figure>
+<p>使用 ls 命令来查看当前 ZooKeeper 中所包含的内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[zk: localhost:2181(CONNECTED) 0] ls /</div><div class="line">[test, zookeeper]</div></pre></td></tr></table></figure>
+<p>创建一个新的 znode ，使用 create /zk myData 。这个命令创建了一个新的 znode 节点“ zk ”以及与它关联的字符串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[zk: localhost:2181(CONNECTED) 1] create /zk &quot;myData&quot;</div><div class="line">Created /zk</div></pre></td></tr></table></figure>
+<p>运行 get 命令来确认 znode 是否包含我们所创建的字符串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">[zk: localhost:2181(CONNECTED) 2] get /zk</div><div class="line">myData</div><div class="line">cZxid = 0xb9</div><div class="line">ctime = Mon Feb 27 00:22:42 CST 2017</div><div class="line">mZxid = 0xb9</div><div class="line">mtime = Mon Feb 27 00:22:42 CST 2017</div><div class="line">pZxid = 0xb9</div><div class="line">cversion = 0</div><div class="line">dataVersion = 0</div><div class="line">aclVersion = 0</div><div class="line">ephemeralOwner = 0x0</div><div class="line">dataLength = 6</div><div class="line">numChildren = 0</div></pre></td></tr></table></figure>
+<p>通过 set 命令来对 zk 所关联的字符串进行设置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">set /zk &quot;zsl&quot;</div><div class="line">get /zk</div></pre></td></tr></table></figure></p>
+<p>znode 删除：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">delete /zk</div></pre></td></tr></table></figure>
+<h2 id="4-Zookeeper-Java客户单学习"><a href="#4-Zookeeper-Java客户单学习" class="headerlink" title="4. Zookeeper Java客户单学习"></a>4. Zookeeper Java客户单学习</h2><p>Curator框架提供了一套高级的API， 简化了ZooKeeper的操作。 它增加了很多使用ZooKeeper开发的特性，可以处理ZooKeeper集群复杂的连接管理和重试机制。 这些特性包括：</p>
+<ul>
+<li>自动化的连接管理: 重新建立到ZooKeeper的连接和重试机制存在一些潜在的错误case。 Curator帮助你处理这些事情，对你来说是透明的。</li>
+<li>简化了原生的ZooKeeper的方法，事件等</li>
+<li>提供了一个现代的流式接口</li>
+</ul>
+<p>关于Curator的使用教程，可以直接查看<a href="http://curator.apache.org/index.html" target="_blank" rel="external">官网</a>, 或者网上这个翻译教程：</p>
+<ol>
+<li><a href="http://colobu.com/2014/09/11/curator-doc-about/" target="_blank" rel="external">Apache Curator 简介</a></li>
+<li><a href="http://colobu.com/2014/09/11/curator-doc-getting-started/" target="_blank" rel="external">Apache Curator 入门</a></li>
+<li><a href="http://colobu.com/2014/09/11/curator-doc-recipes/" target="_blank" rel="external">Apache Curator Recipes</a></li>
+<li><a href="http://colobu.com/2014/09/11/curator-doc-framework/" target="_blank" rel="external">Apache Curator Framework</a></li>
+<li><a href="http://colobu.com/2014/09/11/curator-doc-utilities/" target="_blank" rel="external">Apache Curator Utilities</a></li>
+<li><a href="Apache Curator Client">Apache Curator Client</a></li>
+</ol>
+<h2 id="5-ZooKeeper典型使用场景"><a href="#5-ZooKeeper典型使用场景" class="headerlink" title="5. ZooKeeper典型使用场景"></a>5. ZooKeeper典型使用场景</h2><p>ZooKeeper官方给出了使用zookeeper的几种用途。</p>
+<ol>
+<li>Leader Election</li>
+<li>Barriers</li>
+<li>Queues</li>
+<li>Locks</li>
+<li>Two-phased Commit</li>
+<li>其它应用如Name Service, Configuration, Group Membership</li>
+</ol>
+<p>鸟窝上同样有一个系列教程可以学习：</p>
+<ol>
+<li><a href="http://colobu.com/2014/12/12/zookeeper-recipes-by-example-1/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： Leader选举</a></li>
+<li><a href="http://colobu.com/2014/12/12/zookeeper-recipes-by-example-2/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： 分布式锁</a></li>
+<li><a href="http://colobu.com/2014/12/12/zookeeper-recipes-by-example-3/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： Barrier</a></li>
+<li><a href="http://colobu.com/2014/12/15/zookeeper-recipes-by-example-4/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： 计数器</a></li>
+<li><a href="http://colobu.com/2014/12/15/zookeeper-recipes-by-example-5/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： 缓存</a></li>
+<li><a href="http://colobu.com/2014/12/15/zookeeper-recipes-by-example-6/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： 临时节点</a></li>
+<li><a href="http://colobu.com/2014/12/15/zookeeper-recipes-by-example-7/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： 队列</a></li>
+<li><a href="http://colobu.com/2014/12/16/zookeeper-recipes-by-example-8/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： Curator框架应用</a></li>
+<li><a href="http://colobu.com/2014/12/16/zookeeper-recipes-by-example-9/" target="_blank" rel="external">跟着实例学习ZooKeeper的用法： Curator扩展库</a></li>
+</ol>
+<h2 id="6-Zookeeper的局限性"><a href="#6-Zookeeper的局限性" class="headerlink" title="6. Zookeeper的局限性"></a>6. Zookeeper的局限性</h2><p>Zookeeper是一个强大的工具，上文讲了很多Zookeeper的适用场景，但是Zookeeper是一主多从，而且所有的数据修改都需要经过Leader，这经常导致Leader压力过大，关于Zookeeper的局限性，可以看下高可用架构微信公众号推送的这篇文章：<a href="http://mp.weixin.qq.com/s/apJsW5bvh31OomktacYFRg" target="_blank" rel="external">用ZooKeeper真的low吗？上千个节点场景配置服务方案大讨论 </a></p>
+<p>参考链接</p>
+<ol>
+<li><a href="http://www.wuzesheng.com/?p=2609" target="_blank" rel="external">http://www.wuzesheng.com/?p=2609</a></li>
+<li><a href="https://my.oschina.net/xianggao/blog/531204" target="_blank" rel="external">https://my.oschina.net/xianggao/blog/531204</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式/" rel="tag"># 分布式</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/04/分布式环境下的数据一致性问题/" rel="next" title="分布式环境下的数据一致性问题">
+                <i class="fa fa-chevron-left"></i> 分布式环境下的数据一致性问题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/05/mysql慢查询优化思路/" rel="prev" title="mysql慢查询优化思路">
+                mysql慢查询优化思路 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="" />
+          <p class="site-author-name" itemprop="name"></p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">Artikel</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">Tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-ZooKeeper基本原理"><span class="nav-number">1.</span> <span class="nav-text">1. ZooKeeper基本原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-数据模型"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 数据模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-重要概念"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 重要概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-1-ZNode"><span class="nav-number">1.2.1.</span> <span class="nav-text">1.2.1 ZNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-2-Session"><span class="nav-number">1.2.2.</span> <span class="nav-text">1.2.2 Session</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-3-Watcher"><span class="nav-number">1.2.3.</span> <span class="nav-text">1.2.3 Watcher</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-ZooKeeper特性"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 ZooKeeper特性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-1-读、写-更新-模式"><span class="nav-number">1.3.1.</span> <span class="nav-text">1.3.1 读、写(更新)模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-2-WAL和Snapshot"><span class="nav-number">1.3.2.</span> <span class="nav-text">1.3.2 WAL和Snapshot</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-3-FIFO"><span class="nav-number">1.3.3.</span> <span class="nav-text">1.3.3 FIFO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-4-Linearizability"><span class="nav-number">1.3.4.</span> <span class="nav-text">1.3.4 Linearizability</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-单机部署Zookeeper"><span class="nav-number">2.</span> <span class="nav-text">2. 单机部署Zookeeper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Zookeeper-客户端学习"><span class="nav-number">3.</span> <span class="nav-text">3. Zookeeper 客户端学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Zookeeper-Java客户单学习"><span class="nav-number">4.</span> <span class="nav-text">4. Zookeeper Java客户单学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-ZooKeeper典型使用场景"><span class="nav-number">5.</span> <span class="nav-text">5. ZooKeeper典型使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Zookeeper的局限性"><span class="nav-number">6.</span> <span class="nav-text">6. Zookeeper的局限性</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+</div>
+
+
+<div class="powered-by">
+  Erstellt mit  <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>
