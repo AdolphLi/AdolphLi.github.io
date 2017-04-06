@@ -93,7 +93,7 @@
 <meta property="og:url" content="http://yoursite.com/2017/04/03/基于netty-wrapper实现自己的rpc/index.html">
 <meta property="og:site_name" content="Share">
 <meta property="og:description" content="在之前的基于Netty实现自己的网络框架中，我们实现了自己的网络框架netty-wrapper，本文将展示如何使用netty-wrapper实现自己的rpc框架。">
-<meta property="og:updated_time" content="2017-04-06T15:46:00.764Z">
+<meta property="og:updated_time" content="2017-04-06T15:54:49.841Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="基于netty-wrapper实现自己的rpc">
 <meta name="twitter:description" content="在之前的基于Netty实现自己的网络框架中，我们实现了自己的网络框架netty-wrapper，本文将展示如何使用netty-wrapper实现自己的rpc框架。">
@@ -321,7 +321,7 @@
       
 
       
-        <p>在之前的<a href="">基于Netty实现自己的网络框架</a>中，我们实现了自己的网络框架<a href="https://github.com/AdolphLi/netty-wrapper" target="_blank" rel="external">netty-wrapper</a>，本文将展示如何使用netty-wrapper实现自己的rpc框架。</p>
+        <p>在之前的<a href="https://adolphli.github.io/2017/03/01/%E5%9F%BA%E4%BA%8ENetty%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%B7%B1%E7%9A%84%E7%BD%91%E7%BB%9C%E6%A1%86%E6%9E%B6/" target="_blank" rel="external">基于Netty实现自己的网络框架</a>中，我们实现了自己的网络框架<a href="https://github.com/AdolphLi/netty-wrapper" target="_blank" rel="external">netty-wrapper</a>，本文将展示如何使用netty-wrapper实现自己的rpc框架。</p>
 <a id="more"></a>
 <p>rpc框架的测试用例如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">// 1. 发布服务</div><div class="line">factory.provider(&quot;hello&quot;).service(&quot;com.github.adolphli.rpc.HelloService&quot;).serviceId(&quot;uniqueServiceId&quot;).impl(new HelloServiceImpl()).publish();</div><div class="line"></div><div class="line">// 2. 引用服务</div><div class="line">HelloService helloService = factory.consumer(&quot;hello&quot;).service(&quot;com.github.adolphli.rpc.HelloService&quot;).serviceId(&quot;uniqueServiceId&quot;).methodTimeout(&quot;hello&quot;, 1000).targetUrl(&quot;127.0.0.1:6666&quot;).subscribe();</div><div class="line"></div><div class="line">// 3. rpc调用</div><div class="line">People result = helloService.hello(new People(Integer.toString(index), index));</div></pre></td></tr></table></figure>

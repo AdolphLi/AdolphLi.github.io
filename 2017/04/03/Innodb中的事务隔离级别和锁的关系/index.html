@@ -104,7 +104,7 @@
 <meta property="og:image" content="http://pic.yupoo.com/hedengcheng/DnJ6S1s7/medish.jpg">
 <meta property="og:image" content="http://pic.yupoo.com/hedengcheng/DnJ6RTaA/medish.jpg">
 <meta property="og:image" content="http://pic.yupoo.com/hedengcheng/DnJ6S9J0/medish.jpg">
-<meta property="og:updated_time" content="2017-04-03T08:44:04.193Z">
+<meta property="og:updated_time" content="2017-04-06T15:54:25.456Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Innodb中的事务隔离级别和锁的关系">
 <meta name="twitter:description" content="分布式环境下的数据一致性问题讲解了分布式环境下保持一致性的解决方案，本文讲解非分布式环境下数据一致性保障方案——数据库事务。">
@@ -333,7 +333,7 @@
       
 
       
-        <p><a href="">分布式环境下的数据一致性问题</a>讲解了分布式环境下保持一致性的解决方案，本文讲解非分布式环境下数据一致性保障方案——数据库事务。<br><a id="more"></a></p>
+        <p><a href="https://adolphli.github.io/2017/03/04/%E5%88%86%E5%B8%83%E5%BC%8F%E7%8E%AF%E5%A2%83%E4%B8%8B%E7%9A%84%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98/" target="_blank" rel="external">分布式环境下的数据一致性问题</a>讲解了分布式环境下保持一致性的解决方案，本文讲解非分布式环境下数据一致性保障方案——数据库事务。<br><a id="more"></a></p>
 <p>数据库事务，是指作为单个逻辑工作单元执行的一系列操作，要么完整地执行，要么完全地不执行。 事务处理可以确保除非事务性单元内的所有操作都成功完成，否则不会永久更新面向数据的资源。通过将一组相关操作组合为一个要么全部成功要么全部失败的单元，可以简化错误恢复并使应用程序更加可靠。一个逻辑工作单元要成为事务，必须满足所谓的ACID（原子性、一致性、隔离性和持久性）属性。</p>
 <p>本文主要内容来自何登成的<a href="http://hedengcheng.com/?p=771" target="_blank" rel="external">MySQL 加锁处理分析</a>。美团点评技术博客的<a href="http://tech.meituan.com/innodb-lock.html" target="_blank" rel="external">Innodb中的事务隔离级别和锁的关系</a>也是一篇很好的文章，通过一个例子讲解了Innodb的隔离级别。</p>
 <h3 id="MVCC与当前读、快照读"><a href="#MVCC与当前读、快照读" class="headerlink" title="MVCC与当前读、快照读"></a>MVCC与当前读、快照读</h3><p>MySQL InnoDB存储引擎，实现的是基于多版本的并发控制协议——MVCC (Multi-Version Concurrency Control)。MVCC最大的好处，相信也是耳熟能详：读不加锁，读写不冲突。在读多写少的OLTP应用中，读写不冲突是非常重要的，极大的增加了系统的并发性能，这也是为什么现阶段，几乎所有的RDBMS，都支持了MVCC。</p>
